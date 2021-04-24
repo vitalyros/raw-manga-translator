@@ -1,0 +1,31 @@
+{
+    "manifest_version": 2,
+    "name": "raw manga translator",
+    "version": "1.0",
+  
+    "description": "raw manga translator",
+
+    "browser_action": {
+    },
+  
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["dist/page.js"]
+      }
+    ],
+
+    "permissions": [
+      "<all_urls>",
+      "activeTab",
+      "menus"
+    ],
+
+    "background": {
+      "scripts": ["dist/background.js"]
+    },
+
+    "web_accessible_resources": [
+      "dist/*"
+    ]
+  }

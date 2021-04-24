@@ -1,4 +1,4 @@
-# Raw Manga Translator
+# Raw Manga Translator Firefox Plugin
 A firefox plugin that automatically translates texts in japanese manga on demand
 
 ## Current pipeline
