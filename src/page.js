@@ -1,4 +1,11 @@
-var messaging = require('./messaging.js');
+var messaging = require('./modules/messaging.js');
 messaging.init(messaging.Location.page);
-messaging.addListener((message) => { console.log("message: ", message)})
-messaging.send({ type: "page", data: "hello from page"})
+
+var message_logger = require('./modules/message_logger.js');
+message_logger.init();
+
+var area_selection = require('./modules/area_selection.js');
+area_selection.init();
+
+var recongition = require('./modules/recognition_tesseract.js');
+recongition.init()

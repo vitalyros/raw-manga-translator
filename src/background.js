@@ -1,8 +1,14 @@
-var messaging = require('./messaging.js');
+var messaging = require('./modules/messaging.js');
 messaging.init(messaging.Location.background);
-messaging.addListener((message) => { console.log("message: ", message)})
-messaging.send({ type: "background", data: "hello from background"})
 
+var message_logger = require('./modules/message_logger.js');
+message_logger.init();
 
-var context_menu = require('./context_menu.js');
+var context_menu = require('./modules/context_menu.js');
 context_menu.init()
+
+var translation = require('./modules/translation_unfriedly_google_translate.js');
+translation.init();
+
+var image_capture = require('./modules/image_capture_screenshot.js')
+image_capture.init()
