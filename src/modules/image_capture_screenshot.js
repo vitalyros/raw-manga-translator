@@ -8,18 +8,25 @@ function logError(...arg) {
 }
 
 function onAreaSelected(message) {
+    var box = message.data.box
     var detail = {
       quality: 100,
-      rect: message.data.box
+      rect: {
+        x: box.x_scrolled,
+        y: box.y_scrolled,
+        width: box.width,
+        height: box.height
+      }
     }
     var capturing = browser.tabs.captureVisibleTab(null, detail);
     capturing.then(
-      function(imageUri) { 
+      function(image_uri) { 
         messaging.send({
             from: module_name,
             type: messaging.MessageTypes.image_captured,
             data: {
-                imageUri: imageUri
+                box: box,
+                image_uri: image_uri
             }
         });
       }, logError);

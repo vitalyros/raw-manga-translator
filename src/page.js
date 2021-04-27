@@ -9,3 +9,6 @@ area_selection.init();
 
 var recongition = require('./modules/recognition_tesseract.js');
 recongition.init()
+
+var result_popup = require('./modules/result_popup_material.jsx');
+result_popup.init()

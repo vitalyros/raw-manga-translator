@@ -126,9 +126,15 @@ function onMouseUp(event) {
         isMouseDown = false;
         endX = event.clientX;
         endY = event.clientY;
+        var x_visible = selectionDivUpperCornerX();
+        var y_visible = selectionDivUpperCornerY();
+        var x_scrolled = x_visible + window.scrollX;
+        var y_scrolled = y_visible + window.scrollY;
         var box = {
-            x: selectionDivUpperCornerX() + window.scrollX,
-            y: selectionDivUpperCornerY() + window.scrollY,
+            x_scrolled: x_scrolled,
+            y_scrolled: y_scrolled,
+            x_visible: x_visible,
+            y_visible: y_visible,
             width: selectionDivWidth(),
             height: selectionDivHeight()
         }

@@ -15,6 +15,8 @@ function onTextRecongized(message) {
             from: module_name,
             type: messaging.MessageTypes.text_translated,
             data: {
+                box: message.data.box,
+                image_uri: message.data.image_uri,
                 recognized_text: message.data.recognized_text,
                 translated_text: res.text
             }

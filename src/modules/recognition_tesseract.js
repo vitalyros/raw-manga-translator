@@ -13,7 +13,7 @@ function startTessaract() {
     console.log("starting tesseract");
     worker = tesseract.createWorker({
     workerPath: browser.extension.getURL("./node_modules/tesseract.js/dist/worker.min.js"),
-    langPath: browser.extension.getURL("lang"),
+    langPath: browser.extension.getURL("./lang"),
     corePath: browser.extension.getURL("./node_modules/tesseract.js-core/tesseract-core.wasm.js"),
     logger: m => console.log("tesseract message" + m),
     });
@@ -29,15 +29,14 @@ function startTessaract() {
 
 function onImageCaptured(message) {
     if (enabled) {
-        worker.recognize(message.data.imageUri).then(
+        worker.recognize(message.data.image_uri).then(
             function(recresult) { 
-                console.log("recongintion ended: ", recresult);
-                console.log("recognized data: ", recresult.data);
-                console.log("recognized text: " + recresult.data.text);
                 messaging.send({
                     from: module_name,
                     type: messaging.MessageTypes.text_recognized, 
                     data: {
+                        box: message.data.box,
+                        image_uri: message.data.image_uri,
                         recognized_text: recresult.data.text
                     }
                 })
