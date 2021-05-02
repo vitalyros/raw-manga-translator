@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack"
+    "build": "webpack",
+    "watch": "webpack --watch"
   },
   "keywords": [],
   "author": "",
@@ -19,14 +20,16 @@
   "dependencies": {
     "@material-ui/core": "^4.11.3",
     "@material-ui/icons": "^4.11.2",
+    "@material-ui/styles": "^4.11.3",
     "fontsource-roboto": "^4.0.0",
     "google-translate-api-browser": "^1.1.71",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-draggable": "^4.4.3",
-    "tesseract.js": "^2.1.4",
-    "tesseract.js-core": "^2.2.0",
-    "url-loader": "^4.1.1"
+    "tesseract.js": "2.1.1",
+    "tesseract.js-core": "2.2.0",
+    "url-loader": "^4.1.1",
+    "webpack-visualizer-plugin": "^0.1.11"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.16",

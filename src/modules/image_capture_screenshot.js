@@ -1,51 +1,44 @@
-var messaging = require('./messaging.js');
+var events = require('./events.js');
 
 const module_name = 'image_capture_screenshot'
 var enabled = false;
 
-function logError(...arg) {
-    console.error("Error: ", ...arg);
-}
-
-function onAreaSelected(message) {
-    var box = message.data.box
-    var detail = {
-      quality: 100,
-      rect: {
-        x: box.x_scrolled,
-        y: box.y_scrolled,
-        width: box.width,
-        height: box.height
-      }
-    }
-    var capturing = browser.tabs.captureVisibleTab(null, detail);
-    capturing.then(
-      function(image_uri) { 
-        messaging.send({
+async function onAreaSelected(message) {
+    try {
+        var box = message.data.box
+        var detail = {
+            quality: 100,
+            rect: {
+                x: box.x_scrolled,
+                y: box.y_scrolled,
+                width: box.width,
+                height: box.height
+            }
+        }
+        var image_uri = await browser.tabs.captureVisibleTab(null, detail);
+        events.fire({
             from: module_name,
-            type: messaging.MessageTypes.image_captured,
+            type: events.EventTypes.image_captured,
             data: {
                 box: box,
                 image_uri: image_uri
             }
         });
-      }, logError);
+    } catch (e) {
+        console.error("Failed onAreaSelected", message, e)
+    }
 }
 
-function enable() {
+export async function enable() {
     if (!enabled) {
-        messaging.addListener(onAreaSelected, messaging.MessageTypes.area_selected)
+        events.addListener(onAreaSelected, events.EventTypes.area_selected)
         enabled = true
     }
 }
 
-function disable() {
+export async function disable() {
     if (enabled) {
-        messaging.removeListener(onAreaSelected, messaging.MessageTypes.area_selected)
+        events.removeListener(onAreaSelected, events.EventTypes.area_selected)
         enabled = false
     }
 }
-
-module.exports.disable = disable;
-module.exports.init = enable;
-module.exports.enable = enable;

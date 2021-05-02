@@ -1,4 +1,4 @@
-var messaging = require('./messaging.js');
+var events = require('./events.js');
 
 const module_name = 'message_logger';
 
@@ -8,20 +8,16 @@ function onMessage(message) {
     console.log("message_logger: ", message);
 }
 
-function enable() {
+export async function enable() {
     if (!enabled) {
-        messaging.addListener(onMessage);
+        events.addListener(onMessage);
         enabled = true;
     }
 }
 
-function disable() {
+export async function disable() {
     if (enabled) {
-        messaging.removeListener(onMessage);
+        events.removeListener(onMessage);
         enabled = false;
     }
 }
-
-module.exports.disable = disable;
-module.exports.init = enable;
-module.exports.enable = enable;

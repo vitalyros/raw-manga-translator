@@ -1,5 +1,5 @@
 const translate_api = require('google-translate-api-browser');
-const messaging = require('./messaging.js');
+const events = require('./events.js');
 const module_name = 'translate_unfriendly_google_translate_api';
 
 var enabled = false;
@@ -8,36 +8,35 @@ function logError(...arg) {
     console.error("Error: ", ...arg);
 }
 
-function onTextRecongized(message) {
-    translate_api.translate(message.data.recognized_text, { to: "en" })
-    .then(res => {
-        messaging.send({
+async function onTextRecongized(event) {
+    try {
+        var res = await translate_api.translate(event.data.recognized_text, { to: "en" })
+        await events.fire({
             from: module_name,
-            type: messaging.MessageTypes.text_translated,
+            type: events.EventTypes.text_translated,
             data: {
-                box: message.data.box,
-                image_uri: message.data.image_uri,
-                recognized_text: message.data.recognized_text,
+                box: event.data.box,
+                image_uri: event.data.image_uri,
+                recognized_text: event.data.recognized_text,
+                ocr_result: event.data.ocr_result,
                 translated_text: res.text
             }
         });
-    }, logError);
+    } catch (e) {
+        console.error("Failed onTextRecongized", event, e)
+    }
 }
 
-function enable() {
+export async function enable() {
     if (!enabled) {
-        messaging.addListener(onTextRecongized, messaging.MessageTypes.text_recognized)
+        events.addListener(onTextRecongized, events.EventTypes.text_recognized)
         enabled = true
     }
 }
 
-function disable() {
+export async function disable() {
     if (enabled) {
-        messaging.removeListener(onTextRecongized, messaging.MessageTypes.text_recognized)
+        events.removeListener(onTextRecongized, events.EventTypes.text_recognized)
         enabled = false
     }
 }
-
-module.exports.disable = disable;
-module.exports.init = enable;
-module.exports.enable = enable;

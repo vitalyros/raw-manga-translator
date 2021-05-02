@@ -1,4 +1,4 @@
-import messaging from "./messaging.js";
+import * as events from "./events.js";
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { makeStyles } from '@material-ui/core';
@@ -22,6 +22,7 @@ var box = {
     x_visible: 0,
     widht: 0
 };
+var recognized_text = '';
 var translated_text = '';
 var popup_wrapper_div = null;
 
@@ -67,13 +68,9 @@ function TranslationDialog() {
           PaperComponent={PaperComponent}
         >
         <DialogTitle style={{ cursor: 'move' }} id="draggable-dialog-title">
-          Translated text
+            <div><span>Recognized: </span><span>{recognized_text}</span></div>
+            <div><span>Translated: </span><span>{translated_text}</span></div>
         </DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              {translated_text}
-            </DialogContentText>
-          </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} color="primary">
               Close
@@ -82,40 +79,43 @@ function TranslationDialog() {
         </Dialog>
       </div>
     );
-  }
-
-
-function onTestTranslated(message) {
-    box = message.data.box;
-    translated_text = message.data.translated_text;
-    if (!dialogCreated) {
-        var wrapper_div_id = "romatora-translation-popup-wrapper"
-        if (popup_wrapper_div === null) {
-            popup_wrapper_div = document.createElement('div');
-            popup_wrapper_div.id = wrapper_div_id;
-            document.body.appendChild(popup_wrapper_div);
-        }
-        ReactDOM.render(<TranslationDialog />, document.querySelector(`#${wrapper_div_id}`));
-        dialogCreated = true
-    }
-    showDialog();
 }
 
-export function enable() {
+
+export async function onTestTranslated(event) {
+    try {
+        box = event.data.box;
+        recognized_text = event.data.recognized_text;
+        translated_text = event.data.translated_text;
+        if (!dialogCreated) {
+            var wrapper_div_id = "romatora-translation-popup-wrapper"
+            if (popup_wrapper_div === null) {
+                popup_wrapper_div = document.createElement('div');
+                popup_wrapper_div.id = wrapper_div_id;
+                document.body.appendChild(popup_wrapper_div);
+            }
+            ReactDOM.render(<TranslationDialog />, document.querySelector(`#${wrapper_div_id}`));
+            dialogCreated = true
+        }
+        showDialog();
+    } catch (e) {
+        logError("onTestTranslated", message, e)
+    }
+}
+
+export async function enable() {
     if (!enabled) {
-        messaging.addListener(onTestTranslated, messaging.MessageTypes.text_translated)
+        events.addListener(onTestTranslated, events.EventTypes.text_translated)
         enabled = true
     }
 }
 
-export function disable() {
+export async function disable() {
     if (enabled) {
         if (popup_wrapper_div != null) {
             document.body.removeChild(popup_wrapper_div)
         }
-        messaging.removeListener(onTestTranslated, messaging.MessageTypes.text_translated)
+        events.removeListener(onTestTranslated, events.EventTypes.text_translated)
         enabled = false
     }
 }
-
-export function init() { enable() }

@@ -1,9 +1,10 @@
-var messaging = require('./messaging.js');
+var events = require('./events.js');
 
 const module_name = 'area_selection';
 
 var enabled = false;
 
+var selection_mode = false;
 var document_bak = null;
 
 var isMouseDown = false;
@@ -13,54 +14,71 @@ var endY = 0;
 var startY = 0;
 var selectionDiv = null;
 
-function started() {
-    document_bak = {};
-    if (typeof document.onmousemove !== 'undefined') {
-        document_bak.onmousemove = document.onmousemove;
-    }
-    if (typeof document.onmouseup !== 'undefined') {
-        document_bak.onmouseup = document.onmouseup;
-    }
-    if (typeof document.onmousedown !== 'undefined') {
-        document_bak.onmousedown = document.onmousedown;
-    }
-    if (typeof document.ondragstart !== 'undefined') {
-        document_bak.ondragstart = document.ondragstart;
-    }
-    if (typeof document.onselectstart !== 'undefined') {
-        document_bak.onselectstart = document.onselectstart;
-    }
+async function startSelectionMode() {
+    try {
+        if (!selection_mode) {
+            document_bak = {};
+            if (typeof document.onmousemove !== 'undefined') {
+                document_bak.onmousemove = document.onmousemove;
+            }
+            if (typeof document.onmouseup !== 'undefined') {
+                document_bak.onmouseup = document.onmouseup;
+            }
+            if (typeof document.onmousedown !== 'undefined') {
+                document_bak.onmousedown = document.onmousedown;
+            }
+            if (typeof document.ondragstart !== 'undefined') {
+                document_bak.ondragstart = document.ondragstart;
+            }
+            if (typeof document.onselectstart !== 'undefined') {
+                document_bak.onselectstart = document.onselectstart;
+            }
 
-    document.onmousemove = onMouseMove;
-    document.onmouseup = onMouseUp;
-    document.onmousedown = onMouseDown;
-    document.ondragstart = function(e) {
-        e.preventDefault();
-        return false
-    };
-    document.onselectstart = function(e) {
-        e.preventDefault();
-        return false
-    };
+            document.onmousemove = onMouseMove;
+            document.onmouseup = onMouseUp;
+            document.onmousedown = onMouseDown;
+            document.ondragstart = function(e) {
+                e.preventDefault();
+                return false
+            };
+            document.onselectstart = function(e) {
+                e.preventDefault();
+                return false
+            };
+            selection_mode = true;
+        }
+    } catch (e) {
+        console.error("Failed enableSelectionMode", e)
+    }
 }
 
-function canceled() {
-    if (document_bak != null) {
-        if (typeof document.onmousemove !== 'undefined') {
-            document.onmousemove = document_bak.onmousemove;
+async function stopSelectionMode() {
+    console.log("stop selection mode")
+    try {
+        if (selection_mode) {
+            if (document_bak != null) {
+                if (typeof document.onmousemove !== 'undefined') {
+                    document.onmousemove = document_bak.onmousemove;
+                }
+                if (typeof document.onmouseup !== 'undefined') {
+                    document.onmouseup = document_bak.onmouseup;
+                }
+                if (typeof document.onmousedown !== 'undefined') {
+                    document.onmousedown = document_bak.onmousedown;
+                }
+                if (typeof document.ondragstart !== 'undefined') {
+                    document.ondragstart = document_bak.ondragstart;
+                }
+                if (typeof document.onselectstart !== 'undefined') {
+                    document.onselectstart = document_bak.onselectstart;
+                }
+                document_bak = null;
+            }
+            hideSelectionDiv();
+            selection_mode = false;
         }
-        if (typeof document.onmouseup !== 'undefined') {
-            document.onmouseup = document_bak.onmouseup;
-        }
-        if (typeof document.onmousedown !== 'undefined') {
-            document.onmousedown = document_bak.onmousedown;
-        }
-        if (typeof document.ondragstart !== 'undefined') {
-            document.ondragstart = document_bak.ondragstart;
-        }
-        if (typeof document.onselectstart !== 'undefined') {
-            document.onselectstart = document_bak.onselectstart;
-        }
+    } catch (e) {
+        console.error("Failed disableSelectionMode", e)
     }
 }
 
@@ -103,6 +121,27 @@ function selectionDivUpperCornerY() {
     return selectionDivUpperCorner(startY, endY);
 }
 
+function initializeSelectionDiv() {
+    if (typeof selectionDiv === "undefined" || selectionDiv === null) {
+        selectionDiv = document.createElement("div");
+        selectionDiv.style.position = "fixed";
+        selectionDiv.style.border = "3px dashed black";
+        window.document.body.appendChild(selectionDiv);
+    }
+}
+
+function showSelectionDiv() {
+    if (typeof selectionDiv !== "undefined" && selectionDiv != null) {
+        selectionDiv.style.display = "block";
+    }
+}
+
+function hideSelectionDiv() {
+    if (typeof selectionDiv !== "undefined" && selectionDiv != null) {
+        selectionDiv.style.display = "none";
+    }
+}
+
 function onMouseMove(event) {
     if (event.button != 0) {
         isMouseDown = false;
@@ -110,9 +149,7 @@ function onMouseMove(event) {
     if (isMouseDown) {
         endX = event.clientX;
         endY = event.clientY;
-        console.log(`Dragging ${endX} ${endY}`);
-
-        if (typeof selectionDiv != "undefined" || selectionDiv == null) {
+        if (typeof selectionDiv !== "undefined" || selectionDiv == null) {
             selectionDiv.style.left = `${selectionDivUpperCornerX()}px`;
             selectionDiv.style.width = `${selectionDivWidth()}px`;
             selectionDiv.style.top = `${selectionDivUpperCornerY()}px`;
@@ -138,17 +175,15 @@ function onMouseUp(event) {
             width: selectionDivWidth(),
             height: selectionDivHeight()
         }
-        messaging.send({
-            type: messaging.MessageTypes.area_selected,
+        events.fire({
+            type: events.EventTypes.area_selected,
             from: module_name,
             data: {
                 box: box
             }
         })
         console.log(`Ended Dragging ${endX} ${endY}`);
-        if (typeof selectionDiv != "undefined" && selectionDiv != null) {
-            selectionDiv.style.display = "none";
-        }
+        hideSelectionDiv();
     }
 }
 
@@ -157,39 +192,31 @@ function onMouseDown(event) {
     startX = event.clientX;
     startY = event.clientY;
     console.log(`Start Dragging ${startX} ${startY}`)
-    if (typeof selectionDiv == "undefined" || selectionDiv == null) {
-        selectionDiv = document.createElement("div");
-        selectionDiv.style.position = "fixed";
-        selectionDiv.style.border = "3px solid black";
-        window.document.body.appendChild(selectionDiv);
-    }
+    initializeSelectionDiv();
     selectionDiv.style.left = `${startX}px`;
     selectionDiv.style.width = `0px`;
     selectionDiv.style.top = `${startY}px`;
     selectionDiv.style.height = `0px`;
-    selectionDiv.style.display = "block";
+    showSelectionDiv();
 }
 
-function reset() {
-    canceled();
-}
-
-function enable() {
+export async function enable() {
     if (!enabled) {
-        messaging.addListener(started, messaging.MessageTypes.start_select_area)
-        messaging.addListener(canceled, messaging.MessageTypes.cancel_select_area)      
+        events.addListener(startSelectionMode, events.EventTypes.start_select_area)
+        events.addListener(stopSelectionMode, events.EventTypes.cancel_select_area)      
+        await events.fire({
+           from: module_name,
+           type: events.EventTypes.module_area_selection_enabled,
+           data: {} 
+        });
         enabled = true
     }
 }
 
-function disable() {
+export async function disable() {
     if (enabled) {
-        messaging.removeListener(started, messaging.MessageTypes.start_select_area)
-        messaging.removeListener(canceled, messaging.MessageTypes.cancel_select_area)      
+        events.removeListener(startSelectionMode, events.EventTypes.start_select_area)
+        events.removeListener(stopSelectionMode, events.EventTypes.cancel_select_area)      
         enabled = false
     }
 }
-
-module.exports.disable = disable;
-module.exports.init = enable;
-module.exports.enable = enable;

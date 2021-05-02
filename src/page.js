@@ -1,14 +1,23 @@
-var messaging = require('./modules/messaging.js');
-messaging.init(messaging.Location.page);
+(async() => {
+    try {
+        var events = require('./modules/events.js');
+        await events.enable(events.Location.Page);
 
-var message_logger = require('./modules/message_logger.js');
-message_logger.init();
+        var message_logger = require('./modules/message_logger.js');
+        await message_logger.enable();
 
-var area_selection = require('./modules/area_selection.js');
-area_selection.init();
+        // var recongition = require('./modules/recognition_tesseract.js');
+        // await recongition.enable()
 
-var recongition = require('./modules/recognition_tesseract.js');
-recongition.init()
+        // var result_popup = require('./modules/result_popup_material.jsx');
+        // await result_popup.enable()
 
-var result_popup = require('./modules/result_popup_material.jsx');
-result_popup.init()
+        var area_selection = require('./modules/area_selection.js');
+        await area_selection.enable();
+
+        // var hocr_display = require('./modules/hocr_display.jsx');
+        // await hocr_display.enable()
+    } catch (e) {
+        console.error("romatora initialization error", e)
+    }
+})();
