@@ -4,10 +4,6 @@ const module_name = 'translate_unfriendly_google_translate_api';
 
 var enabled = false;
 
-function logError(...arg) {
-    console.error("Error: ", ...arg);
-}
-
 async function onTextRecongized(event) {
     try {
         var res = await translate_api.translate(event.data.recognized_text, { to: "en" })
