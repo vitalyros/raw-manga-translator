@@ -9,8 +9,8 @@
         var recongition = require('./modules/recognition_tesseract.js');
         await recongition.enable()
 
-        // var result_popup = require('./modules/result_popup_material.jsx');
-        // await result_popup.enable()
+        var result_popup = require('./modules/result_popup_material.jsx');
+        await result_popup.enable()
 
         var area_selection = require('./modules/area_selection.js');
         await area_selection.enable();
