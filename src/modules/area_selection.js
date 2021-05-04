@@ -125,7 +125,7 @@ function initializeSelectionDiv() {
     if (typeof selectionDiv === "undefined" || selectionDiv === null) {
         selectionDiv = document.createElement("div");
         selectionDiv.style.position = "fixed";
-        selectionDiv.style['z-index'] = 1200;
+        selectionDiv.style['z-index'] = 1299;
         selectionDiv.style.border = "3px dashed black";
         window.document.body.appendChild(selectionDiv);
     }

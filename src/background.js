@@ -9,7 +9,8 @@
         var context_menu = require('./modules/context_menu.js');
         await context_menu.enable()
 
-        var translation = require('./modules/translation_unfriedly_google_translate.js');
+        var translation = require('./modules/translation_stub.js');
+        // var translation = require('./modules/translation_unfriedly_google_translate.js');
         await translation.enable();
 
         var image_capture = require('./modules/image_capture_screenshot.js')

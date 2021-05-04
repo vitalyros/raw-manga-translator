@@ -15,8 +15,8 @@
         var area_selection = require('./modules/area_selection.js');
         await area_selection.enable();
 
-        var hocr_display = require('./modules/hocr_display.jsx');
-        await hocr_display.enable()
+        // var hocr_display = require('./modules/hocr_display.jsx');
+        // await hocr_display.enable()
     } catch (e) {
         console.error("romatora initialization error", e)
     }

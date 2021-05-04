@@ -68,7 +68,7 @@ export async function onTextRecognized(event) {
         line_hocr_wrapper_div.style.left = `${box.x_scrolled}px`;
         line_hocr_wrapper_div.style.top = `${box.y_scrolled + box.height}px`;
         line_hocr_wrapper_div.innerHTML = ocr_result.data.hocr;
-        markHocrElements(line_hocr_wrapper_div, 'ocr_line', 1, "2px solid green", 0, "green");
+        markHocrElements(line_hocr_wrapper_div, 'ocrx_word', 1, "2px solid green", 0, "green");
     } catch (e) {
         logError("onTextRecognized", message, e)
     }
