@@ -1,3 +1,5 @@
+import * as tabs from '../utils/tabs.js'
+
 export const Location = {
     Undefined: 'Undefined',
     Background: 'Background',
@@ -7,13 +9,13 @@ export const Location = {
 export const EventTypes = {
     module_area_selection_enabled: 'module_area_selection_enabled',
 
-    translation_reset: 'translation_reset', 
     start_select_area: 'start_select_area',
     cancel_select_area: 'cancel_select_area',
     area_selected: 'area_selected',
     image_captured: 'image_captured',
     text_recognized: 'text_recognized',
     text_translated: 'text_translated',
+    translation_requested: 'translation_requested',
     pipeline_failed: 'pipeline_failed'
 }
 
@@ -23,20 +25,12 @@ var location = Location.Undefined
 var listeners_by_type = {};
 var listeners_for_all = [];
 
-function logError(...arg) {
-    console.error("Error: ", ...arg);
-}
 
 async function sendToActiveTab(event) {
-    var tabs = await browser.tabs.query({active: true, currentWindow: true, discarded: false, windowType: 'normal'});
-    var sent = false
-    for (let tab of tabs) {
-        if (typeof tab.url !== 'undefined') {
-            browser.tabs.sendMessage(tab.id, event);
-            sent = true;
-        }
-    };
-    if (!sent) {
+    var tab = await tabs.getActiveTab()
+    if (tab) {
+        browser.tabs.sendMessage(tab.id, event);
+    } else {
         console.warn("Not found active tab to send to ", event)
     }
 }
@@ -58,17 +52,30 @@ export async function fire(event) {
     }
 }
  
-function onEvent(event) {
+async function onEvent(event) {
     if (enabled) {
         var nick = event.nick;
         if (typeof nick !== 'undefined' && nick === plugin_nickname) {
 
-            listeners_for_all.forEach(listener => listener(event));
+            listeners_for_all.forEach(async listener => {
+                try {
+                    await listener(event)
+                } catch(e) {
+                    console.error("romatora: listener failed to handle event", event, listener, e)
+                }
+            });
 
             if (typeof event.type !== 'undefined') {
                 var type_listeners = listeners_by_type[event.type];
                 if (typeof type_listeners !== 'undefined') {
-                    type_listeners.forEach(listener => listener(event)) 
+                    console.log("type listeners", type_listeners)
+                    type_listeners.forEach(async listener => {
+                        try {
+                            await listener(event)
+                        } catch(e) {
+                            console.error("romatora: listener failed to handle event", event, listener, e)
+                        }   
+                    }); 
                 }
             }   
         }

@@ -13,6 +13,7 @@ var startX = 0;
 var endY = 0;
 var startY = 0;
 var selectionDiv = null;
+var areaThreshold = 400;
 
 async function startSelectionMode() {
     try {
@@ -164,26 +165,32 @@ function onMouseUp(event) {
         isMouseDown = false;
         endX = event.clientX;
         endY = event.clientY;
+        console.log(`Ended Dragging ${endX} ${endY}`);
         var x_visible = selectionDivUpperCornerX();
         var y_visible = selectionDivUpperCornerY();
         var x_scrolled = x_visible + window.scrollX;
         var y_scrolled = y_visible + window.scrollY;
+        var width = selectionDivWidth();
+        var height = selectionDivHeight();
         var box = {
             x_scrolled: x_scrolled,
             y_scrolled: y_scrolled,
             x_visible: x_visible,
             y_visible: y_visible,
-            width: selectionDivWidth(),
-            height: selectionDivHeight()
+            width: width,
+            height: height
         }
-        events.fire({
-            type: events.EventTypes.area_selected,
-            from: module_name,
-            data: {
-                box: box
-            }
-        })
-        console.log(`Ended Dragging ${endX} ${endY}`);
+        if (width * height >= areaThreshold) {
+            events.fire({
+                type: events.EventTypes.area_selected,
+                from: module_name,
+                data: {
+                    box: box
+                }
+            })
+        } else {
+            console.log('area selection threshold not reached');
+        }
         hideSelectionDiv();
     }
 }

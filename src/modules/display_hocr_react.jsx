@@ -1,22 +1,31 @@
 import React from 'react';
 
 var ElementType = {
-    Page: { name: "page", className: "ocr_page", bbox_offset: 3, order: 1 },
-    Area: { name: "area", className: "ocr_carea", bbox_offset: 1, order: 2 },
-    Paragraph: { name: "paragraph", className: "ocr_par", bbox_offset: 1, order: 3 },
-    Line: { name: "line", className: "ocr_line", bbox_offset: 1, order: 4  },
-    Word: { name: "word", className: "ocrx_word", bbox_offset: 1, order: 5  }
+    Page: { name: "page", className: "ocr_page", bboxOffset: 3, order: 1 },
+    Area: { name: "area", className: "ocr_carea", bboxOffset: 1, order: 2 },
+    Paragraph: { name: "paragraph", className: "ocr_par", bboxOffset: 1, order: 3 },
+    Line: { name: "line", className: "ocr_line", bboxOffset: 1, order: 4  },
+    Word: { name: "word", className: "ocrx_word", bboxOffset: 1, order: 5  }
 }
 
-var ElementTypeByClass = {
-    "ocr_page": ElementType.Page,
-    "ocr_carea": ElementType.Area,
-    "ocr_par": ElementType.Paragraph,
-    "ocr_line": ElementType.Line,
-    "ocrx_word": ElementType.Word
+try {
+var ElementTypeByClass = Object.fromEntries(Object.keys(ElementType).map(function(key) {
+    var elementType = ElementType[key];
+    return [elementType.className, elementType];
+}));
+} catch(e) {
+    console.error(e)
 }
 
-export default function DisplayHocr(props) {
+export default function DisplayHocrWithImage(props) {
+  return (props.hocr && props.imageUri && 
+  <div style={{ position: 'relative' }}>
+    <DisplayHocr hocr={props.hocr} />
+    <img src={props.imageUri} />
+  </div>);
+}
+
+export function DisplayHocr(props) {
     var base_id = props.id
     if (typeof props.id === 'undefined') {
         base_id = 'display-hocr'
@@ -97,7 +106,7 @@ export default function DisplayHocr(props) {
                 id: id,
                 order: type.order,
                 type: type,
-                bbox: parseBbox(title, type.bbox_offset),
+                bbox: parseBbox(title, type.bboxOffset),
                 text: text
             }
         }).filter(Boolean).sort((a, b) => {

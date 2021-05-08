@@ -1,20 +1,21 @@
-import * as events from './events.js';
 import * as translation from './translation.js';
+import * as translate_api from 'google-translate-api-browser';
+import * as events from "./events.js";
 
-const module_name = 'translate_stub';
+const module_name = 'translate_unfriendly_google_translate_api';
 
 var enabled = false;
 
 async function onTranslationRequested(event) {
     try {
-        console.log("translate", event)
-        if (event.data.serviceName === translation.TranslationService.Stub) {
+        if (event.data.serviceName === translation.TranslationService.GoogleTranslateApi) {
+            var res = await translate_api.translate(event.data.textToTranslate, { to: "en" })
             await events.fire({
                 from: module_name,
                 type: events.EventTypes.text_translated,
                 data: {
                     textToTranslate: event.data.textToTranslate,
-                    translatedText: `translated text of ${event.data.textToTranslate}`
+                    translatedText: res.text
                 }
             });
         }
