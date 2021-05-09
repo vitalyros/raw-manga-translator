@@ -7,6 +7,9 @@ export const Location = {
 }
 
 export const EventTypes = {
+    AreaSelectionExclusionZoneUpdate: 'AreaSelectionExclusionZoneUpdate',
+    AreaSelectionExclusionZoneDragUpdate: 'AreaSelectionExclusionZoneDragUpdate',
+
     module_area_selection_enabled: 'module_area_selection_enabled',
 
     start_select_area: 'start_select_area',
@@ -68,7 +71,6 @@ async function onEvent(event) {
             if (typeof event.type !== 'undefined') {
                 var type_listeners = listeners_by_type[event.type];
                 if (typeof type_listeners !== 'undefined') {
-                    console.log("type listeners", type_listeners)
                     type_listeners.forEach(async listener => {
                         try {
                             await listener(event)

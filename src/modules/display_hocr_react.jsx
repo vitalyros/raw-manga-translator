@@ -1,3 +1,4 @@
+import { Paper } from '@material-ui/core';
 import React from 'react';
 
 var ElementType = {
@@ -19,10 +20,12 @@ var ElementTypeByClass = Object.fromEntries(Object.keys(ElementType).map(functio
 
 export default function DisplayHocrWithImage(props) {
   return (props.hocr && props.imageUri && 
-  <div style={{ position: 'relative' }}>
-    <DisplayHocr hocr={props.hocr} />
-    <img src={props.imageUri} />
-  </div>);
+    <Paper>
+        <div style={{ position: 'relative', width: 'fit-content' }}>
+            <DisplayHocr hocr={props.hocr} />
+            <img src={props.imageUri} />
+        </div>
+    </Paper>);
 }
 
 export function DisplayHocr(props) {

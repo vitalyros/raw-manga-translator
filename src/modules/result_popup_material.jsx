@@ -18,6 +18,7 @@ import DisplayHocrWithImage from './display_hocr_react.jsx';
 import * as translation from './translation.js';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
+import ErrorBoundary from './error_boundary.jsx';
 
 const module_name = 'result_popup';
 
@@ -26,18 +27,83 @@ const wrapper_div_id = "romatora-translation-popup-wrapper"
 var wrapper_div = null;
 var dialog_component = null;
 
-function PaperComponent(props) {
+function fireExclusionZoneUpdate(component, exclusionAreaName, nodeOpen) {
+  var node = ReactDOM.findDOMNode(component);
+  console.log('title node', node)
+  var rect = node.getBoundingClientRect();
+  console.log("title bounding", rect.top, rect.right, rect.bottom, rect.left);
+  if (nodeOpen) {
+    events.fire({
+      type: events.EventTypes.AreaSelectionExclusionZoneUpdate,
+      from: module_name,
+      data: {
+        name: exclusionAreaName,
+        remove: false,
+        rect: rect
+      }
+    });
+  } else {
+    events.fire({
+      type: events.EventTypes.AreaSelectionExclusionZoneUpdate,
+      from: module_name,
+      data: {
+        name: exclusionAreaName,
+        remove: true
+      }
+    });
+  }
+}
+
+class PaperComponent extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.exclusionAreaName="result_popup_paper"
+  }
+  
+  onDragStart() {
+    events.fire({
+      type: events.EventTypes.AreaSelectionExclusionZoneDragUpdate,
+      from: module_name,
+      data: {
+        dragged: true
+      }
+    });
+  }
+  
+  onDragStop() {
+    events.fire({
+      type: events.EventTypes.AreaSelectionExclusionZoneDragUpdate,
+      from: module_name,
+      data: {
+        dragged: false
+      }
+    });
+    fireExclusionZoneUpdate(this, this.exclusionAreaName, this.props.open)
+  }
+
+  componentDidUpdate() {
+    fireExclusionZoneUpdate(this, this.exclusionAreaName, this.props.open)
+  }
+
+  render() {
     return (
-      <Draggable handle="#romatora-draggable-dialog-title" cancel={'[class*="MuiDialogContent-root"]'}>
-        <Paper {...props} />
+      <Draggable 
+        handle="#romatora-draggable-dialog-title" 
+        cancel={'[class*="MuiDialogContent-root"]'}
+        onStart={() => this.onDragStart()}
+        onStop={() => this.onDragStop()}
+        >
+        <Paper {...this.props} />
       </Draggable>
     );
   }
+}
 
 function TranslationTool(props) {
   console.log("props", props)
   const textFieldStyle = {
-      minWidth: '400px'
+      minWidth: '250px'
   };
 
   const [inputText, setInputText] = React.useState(props.recognizedText);
@@ -49,7 +115,9 @@ function TranslationTool(props) {
   const handleInputTextChanged = (event) => {
     setInputText(event.target.value);
   };
-  return (<Grid container
+  return (
+    <div style={{ width: 'fit-content' }}>
+  <Grid container
     spacing={3}  
     direction="column"
     justify="flex-start"
@@ -57,7 +125,7 @@ function TranslationTool(props) {
       <Grid item>
         <TextField
           id="romatora-recognized-text"
-          label="Recognized text"
+          label="Recognized"
           multiline
           noValidate
           rows={5}
@@ -85,7 +153,7 @@ function TranslationTool(props) {
       <Grid item>
         <TextField
           id="romatora-translated-text"
-          label="Translated text"
+          label="Translated"
           noValidate
           multiline
           fullWidth
@@ -99,7 +167,59 @@ function TranslationTool(props) {
           variant="outlined"
         />
       </Grid>
-    </Grid>);
+    </Grid>
+    </div>
+   );
+}
+
+class ResultPopupTitle extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return (
+      <DialogTitle style={{ cursor: 'move' }} id="romatora-draggable-dialog-title">
+        <Toolbar color="inherit" variant="dense">
+          <Typography edge="start" variant="h6" className={this.props.classes.title}>
+            ロマトラ
+          </Typography>
+          <div className={this.props.classes.grow} />
+          <IconButton edge="end" onClick={this.props.handleClose} color="primary">
+            <CloseIcon />
+          </IconButton>
+        </Toolbar>
+      </DialogTitle>
+     );  
+  }
+}
+
+class ResultPopupContent extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return (<DialogContent style={{ overflow: 'hidden'}} id="romatora-draggable-dialog-content">
+      <Grid container 
+      spacing={3}  
+      direction="row"
+      justify="flex-start"
+      alignItems="flex-start">
+        <Grid item>
+          <DisplayHocrWithImage hocr={this.props.hocr} imageUri={this.props.imageUri}/>
+        </Grid>
+        <Grid item>
+        <TranslationTool 
+          recognizedText={this.props.recognizedText} 
+          translatedText={this.props.translatedText}
+          translateText={this.props.translateText} 
+          translationService={this.props.translationService}
+          onSelectTranslationService={this.props.onSelectTranslationService}/>
+        </Grid>
+      </Grid>
+    </DialogContent>);
+  }
 }
 
 class TranslationDialog extends React.Component {
@@ -114,8 +234,6 @@ class TranslationDialog extends React.Component {
         imageUri: null,
         translationService: translation.TranslationService.Stub
       };
-
-
       this.boundOnTextRecognized = this.onTextRecognized.bind(this)
       this.boundOnTextTranslated = this.onTextTranslated.bind(this)
     }
@@ -123,9 +241,8 @@ class TranslationDialog extends React.Component {
     componentDidMount() {
       events.addListener(this.boundOnTextRecognized, events.EventTypes.text_recognized)
       events.addListener(this.boundOnTextTranslated, events.EventTypes.text_translated)
-
     }
-  
+
     componentWillUnmount() { 
       events.removeListener(this.boundOnTextRecognized, events.EventTypes.text_recognized)
       events.removeListener(this.boundOnTextTranslated, events.EventTypes.text_translated)
@@ -177,9 +294,6 @@ class TranslationDialog extends React.Component {
           left: box.x_visible + box.width,
           top: box.y_visible
         },
-        dialog_content: {
-          overflow: "hidden" 
-        }
       });
     }
 
@@ -192,54 +306,46 @@ class TranslationDialog extends React.Component {
     render() {
       var classes = this.makeClasses(this.state.box)
       return ( 
-      <div>
-          <Dialog 
-            position="absolute"
-            classes={{
-              paper: classes.dialog
-            }}
-            disableEnforceFocus
-            hideBackdrop
-            open={this.state.open}
-            fullWidth={false}
-            maxWidth='xs'
-            onClose={() => this.handleClose()}
-            aria-labelledby="alert-dialog-title"
-            aria-describedby="alert-dialog-description"
-            PaperComponent={PaperComponent}
-          >
-          <DialogTitle style={{ cursor: 'move' }} id="romatora-draggable-dialog-title">
-            <Toolbar color="inherit" variant="dense">
-              <Typography edge="start" variant="h6" className={classes.title}>
-                ロマトラ
-              </Typography>
-              <div className={classes.grow} />
-              <IconButton edge="end" onClick={() => this.handleClose()} color="primary">
-                <CloseIcon />
-              </IconButton>
-            </Toolbar>
-          </DialogTitle>
-          <DialogContent className={classes.dialog_content} id="romatora-draggable-dialog-content">
-              <Grid container 
-              spacing={3}  
-              direction="row"
-              justify="flex-start"
-              alignItems="flex-start">
-                <Grid item xs={6}>
-                  <DisplayHocrWithImage hocr={this.state.hocr} imageUri={this.state.imageUri}/>
-                </Grid>
-                <Grid item xs={6}>
-                  <TranslationTool 
-                  recognizedText={this.state.recognizedText} 
-                  translatedText={this.state.translatedText}
-                  translateText={this.translateText} 
-                  translationService={this.state.translationService}
-                  onSelectTranslationService={(e) => this.onSelectTranslationService(e)}/>
-                </Grid>
-              </Grid>
-              </DialogContent> 
-            </Dialog>
-          </div>
+        <Dialog 
+          position="absolute"
+          classes={{
+            paper: classes.dialog
+          }}
+          disableBackdropClick
+          disableEnforceFocus
+          hideBackdrop
+          open={this.state.open}
+          fullWidth={false}
+          scroll='body'
+          maxWidth='md'
+          onClose={() => this.handleClose()}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+          PaperComponent={PaperComponent}
+          PaperProps={{
+            open: this.state.open
+          }}
+        >
+          
+          <ErrorBoundary>
+            <ResultPopupTitle 
+              open={this.state.open}
+              classes={classes} 
+              handleClose={() => this.handleClose()}/>
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <ResultPopupContent
+              open={this.state.open} 
+              hocr={this.state.hocr} 
+              imageUri={this.state.imageUri}
+              recognizedText={this.state.recognizedText}
+              translatedText={this.state.translatedText}
+              translateText={() => this.translateText()}
+              translationService={this.state.translationService}
+              onSelectTranslationService={(e) => this.onSelectTranslationService(e)}
+            />
+          </ErrorBoundary>
+        </Dialog>
       );
     }
 }

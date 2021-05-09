@@ -15,6 +15,9 @@ var startY = 0;
 var selectionDiv = null;
 var areaThreshold = 400;
 
+var exclusionZones = {};
+var exclusionZoneDragged = false;
+
 async function startSelectionMode() {
     try {
         if (!selection_mode) {
@@ -147,15 +150,21 @@ function hideSelectionDiv() {
 function onMouseMove(event) {
     if (event.button != 0) {
         isMouseDown = false;
+        hideSelectionDiv();
     }
     if (isMouseDown) {
-        endX = event.clientX;
-        endY = event.clientY;
-        if (typeof selectionDiv !== "undefined" || selectionDiv == null) {
-            selectionDiv.style.left = `${selectionDivUpperCornerX()}px`;
-            selectionDiv.style.width = `${selectionDivWidth()}px`;
-            selectionDiv.style.top = `${selectionDivUpperCornerY()}px`;
-            selectionDiv.style.height = `${selectionDivHeight()}px`;
+        if (!exclusionZoneDragged && !isInExclusionZone(event.clientX, event.clientY)) {
+            endX = event.clientX;
+            endY = event.clientY;
+            if (typeof selectionDiv !== "undefined" || selectionDiv == null) {
+                selectionDiv.style.left = `${selectionDivUpperCornerX()}px`;
+                selectionDiv.style.width = `${selectionDivWidth()}px`;
+                selectionDiv.style.top = `${selectionDivUpperCornerY()}px`;
+                selectionDiv.style.height = `${selectionDivHeight()}px`;
+            }
+        } else {
+            isMouseDown = false;
+            hideSelectionDiv();
         }
     }
 }
@@ -163,53 +172,88 @@ function onMouseMove(event) {
 function onMouseUp(event) {
     if (isMouseDown) {
         isMouseDown = false;
-        endX = event.clientX;
-        endY = event.clientY;
-        console.log(`Ended Dragging ${endX} ${endY}`);
-        var x_visible = selectionDivUpperCornerX();
-        var y_visible = selectionDivUpperCornerY();
-        var x_scrolled = x_visible + window.scrollX;
-        var y_scrolled = y_visible + window.scrollY;
-        var width = selectionDivWidth();
-        var height = selectionDivHeight();
-        var box = {
-            x_scrolled: x_scrolled,
-            y_scrolled: y_scrolled,
-            x_visible: x_visible,
-            y_visible: y_visible,
-            width: width,
-            height: height
-        }
-        if (width * height >= areaThreshold) {
-            events.fire({
-                type: events.EventTypes.area_selected,
-                from: module_name,
-                data: {
-                    box: box
-                }
-            })
-        } else {
-            console.log('area selection threshold not reached');
+        if (!exclusionZoneDragged && !isInExclusionZone(event.clientX, event.clientY)) {
+            endX = event.clientX;
+            endY = event.clientY;
+            console.log(`Ended Dragging ${endX} ${endY}`);
+            var x_visible = selectionDivUpperCornerX();
+            var y_visible = selectionDivUpperCornerY();
+            var x_scrolled = x_visible + window.scrollX;
+            var y_scrolled = y_visible + window.scrollY;
+            var width = selectionDivWidth();
+            var height = selectionDivHeight();
+            var box = {
+                x_scrolled: x_scrolled,
+                y_scrolled: y_scrolled,
+                x_visible: x_visible,
+                y_visible: y_visible,
+                width: width,
+                height: height
+            }
+            if (width * height >= areaThreshold) {
+                events.fire({
+                    type: events.EventTypes.area_selected,
+                    from: module_name,
+                    data: {
+                        box: box
+                    }
+                })
+            } else {
+                console.log('area selection threshold not reached');
+            }
         }
         hideSelectionDiv();
     }
 }
 
 function onMouseDown(event) {
-    isMouseDown = true;
-    startX = event.clientX;
-    startY = event.clientY;
-    console.log(`Start Dragging ${startX} ${startY}`)
-    initializeSelectionDiv();
-    selectionDiv.style.left = `${startX}px`;
-    selectionDiv.style.width = `0px`;
-    selectionDiv.style.top = `${startY}px`;
-    selectionDiv.style.height = `0px`;
-    showSelectionDiv();
+    if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.clientX, event.clientY)) {
+        isMouseDown = true;
+        startX = event.clientX;
+        startY = event.clientY;
+        console.log(`Start Dragging ${startX} ${startY}`)
+        initializeSelectionDiv();
+        selectionDiv.style.left = `${startX}px`;
+        selectionDiv.style.width = `0px`;
+        selectionDiv.style.top = `${startY}px`;
+        selectionDiv.style.height = `0px`;
+        showSelectionDiv();
+    }
+}
+
+function isInExclusionZone(x, y) {
+    var result = Object.keys(exclusionZones).find(function(key) {
+        var zone = exclusionZones[key]
+        console.log("exclusion zone check", x, y, zone.left, zone.right, zone.top, zone.bottom)
+        if (x >= zone.left && x <= zone.right && y >= zone.top && y <= zone.bottom) {
+            console.log("mouse in exclusion zone ", key, zone)
+            return true;
+        } else {
+            return false;
+        }
+    });
+    if (!result) {
+        console.log("mouse is not in exclusion zone")
+    }
+    return Boolean(result);
+}
+
+function onExclusionZoneUpdate(event) {
+    if (event.data.remove) {
+        delete exclusionZones[event.data.name]
+    } else {
+        exclusionZones[event.data.name] = event.data.rect
+    }
+}
+
+function onExclusionZoneDragUpdate(event) {
+    exclusionZoneDragged = event.data.dragged;
 }
 
 export async function enable() {
     if (!enabled) {
+        events.addListener(onExclusionZoneUpdate, events.EventTypes.AreaSelectionExclusionZoneUpdate)
+        events.addListener(onExclusionZoneDragUpdate, events.EventTypes.AreaSelectionExclusionZoneDragUpdate)
         events.addListener(startSelectionMode, events.EventTypes.start_select_area)
         events.addListener(stopSelectionMode, events.EventTypes.cancel_select_area)      
         await events.fire({
@@ -223,6 +267,8 @@ export async function enable() {
 
 export async function disable() {
     if (enabled) {
+        events.removeListener(onExclusionAreaUpdate, events.EventTypes.AreaSelectionExclusionZoneUpdate)
+        events.removeListener(onExclusionZoneDragUpdate, events.EventTypes.AreaSelectionExclusionZoneDragUpdate)
         events.removeListener(startSelectionMode, events.EventTypes.start_select_area)
         events.removeListener(stopSelectionMode, events.EventTypes.cancel_select_area)      
         enabled = false
