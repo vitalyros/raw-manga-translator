@@ -1,7 +1,7 @@
 const events = require('./events.js');
 const tesseract = require('tesseract.js');
 
-const module_name = "recongition_tesseract";
+const module_name = "page_recongition_tesseract";
 var enabled = false
 
 var workerPromise = null
@@ -37,22 +37,30 @@ async function startTessaract() {
     }
 }
 
-async function onImageCaptured(message) {
+async function onPageImageCaptured(message) {
     if (enabled) {
         await waitForTesseract()
         try {
-            var ocr_result = await worker.recognize(message.data.image_uri);
-            var post_processed_text = ocr_result.data.text.replace(/[\n\r]/g,' '.replace(' ', ''));
-            events.fire({
-                from: module_name,
-                type: events.EventTypes.text_recognized, 
-                data: {
-                    box: message.data.box,
-                    image_uri: message.data.image_uri,
-                    ocr_result: ocr_result,
-                    recognized_text: post_processed_text
-                }
-            })
+            var date1 = new Date();
+            console.log("recognition started at", date1)
+            // To calculate the time difference of two dates
+            var ocr_result = await worker.recognize(message.data.imageUri);
+            var date2 = new Date();
+            var dateDiff = date2.getTime() - date1.getTime();
+            console.log("recognition ended at", date1)
+            console.log(`recognition lasted ${dateDiff}`, dateDiff)
+            console.log("page image ocr", ocr_result);
+            // var post_processed_text = ocr_result.data.text.replace(/[\n\r]/g,' '.replace(' ', ''));
+            // events.fire({
+            //     from: module_name,
+            //     type: events.EventTypes.text_recognized, 
+            //     data: {
+            //         box: message.data.box,
+            //         image_uri: message.data.image_uri,
+            //         ocr_result: ocr_result,
+            //         recognized_text: post_processed_text
+            //     }
+            // })
         } catch (e) {
             logError("recongintion failed", message, e)
         }
@@ -77,16 +85,16 @@ function initilizeTesseract() {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(initilizeTesseract, events.EventTypes.start_select_area);
-        events.addListener(onImageCaptured, events.EventTypes.image_captured)
+        events.addListener(initilizeTesseract, events.EventTypes.PageInitialized);
+        events.addListener(onPageImageCaptured, events.EventTypes.PageImageCaptured)
         enabled = true
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(initilizeTesseract, events.EventTypes.start_select_area);
-        events.removeListener(onImageCaptured, events.EventTypes.image_captured)
+        events.removeListener(onPageImageCaptured, events.EventTypes.PageInitialized);
+        events.removeListener(onPageImageCaptured, events.EventTypes.PageImageCaptured)
         if (worker != null) {
             worker.terminate();
         }

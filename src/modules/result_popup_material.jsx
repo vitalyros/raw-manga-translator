@@ -19,6 +19,9 @@ import * as translation from './translation.js';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import ErrorBoundary from './error_boundary.jsx';
+// import List from '@material-ui/core/List';
+// import ListItem from '@material-ui/core/LisListItemt';
+
 
 const module_name = 'result_popup';
 
@@ -101,20 +104,10 @@ class PaperComponent extends React.Component {
 }
 
 function TranslationTool(props) {
-  console.log("props", props)
   const textFieldStyle = {
-      minWidth: '250px'
+      minWidth: '350px'
   };
 
-  const [inputText, setInputText] = React.useState(props.recognizedText);
-  
-  const translateText = () => {
-    props.translateText(props.translationService, inputText)
-  };
-
-  const handleInputTextChanged = (event) => {
-    setInputText(event.target.value);
-  };
   return (
     <div style={{ width: 'fit-content' }}>
   <Grid container
@@ -131,22 +124,23 @@ function TranslationTool(props) {
           rows={5}
           fullWidth
           variant="outlined"
-          onChange={handleInputTextChanged}
-          value={inputText}
+          onChange={props.onOriginalTextInput}
+          value={props.originalText}
           style={textFieldStyle}
           variant="outlined"
         />
       </Grid>
-      <Toolbar color="inherit" variant="dense">
+      <Toolbar color="inherit" variant="dense" style={{ width: "100%"}}>
         <Select edge="start"
           value={props.translationService}
           onChange={props.onSelectTranslationService}
         >
-          <MenuItem value={translation.TranslationService.Stub}>Stub</MenuItem>
-          <MenuItem value={translation.TranslationService.GoogleTranslateApi}>Google Translate Api</MenuItem>
           <MenuItem value={translation.TranslationService.GoogleTranslateTab}>Google Translate Tab</MenuItem>
+          <MenuItem value={translation.TranslationService.GoogleTranslateApi}>Google Translate Api</MenuItem>
+          <MenuItem value={translation.TranslationService.Stub}>Stub</MenuItem>
         </Select>
-        <Button edge="end" onClick={translateText} color="primary">
+        <div style={{ flexGrow: 1 }} />
+        <Button edge="end" onClick={props.translateText} color="primary">
           Translate
         </Button>
       </Toolbar>
@@ -184,7 +178,7 @@ class ResultPopupTitle extends React.Component {
           <Typography edge="start" variant="h6" className={this.props.classes.title}>
             ロマトラ
           </Typography>
-          <div className={this.props.classes.grow} />
+          <div style={{ flexGrow: 1 }} />
           <IconButton edge="end" onClick={this.props.handleClose} color="primary">
             <CloseIcon />
           </IconButton>
@@ -211,10 +205,11 @@ class ResultPopupContent extends React.Component {
         </Grid>
         <Grid item>
         <TranslationTool 
-          recognizedText={this.props.recognizedText} 
+          originalText={this.props.originalText} 
           translatedText={this.props.translatedText}
           translateText={this.props.translateText} 
           translationService={this.props.translationService}
+          onOriginalTextInput={this.props.onOriginalTextInput}
           onSelectTranslationService={this.props.onSelectTranslationService}/>
         </Grid>
       </Grid>
@@ -228,11 +223,11 @@ class TranslationDialog extends React.Component {
       this.state = {
         open: false,
         box: { x_visible:0, y_visible: 0, width :0},
-        recognizedText: "",
+        originalText: "",
         translatedText: "",
         hocr: null,
         imageUri: null,
-        translationService: translation.TranslationService.Stub
+        translationService: translation.TranslationService.GoogleTranslateTab
       };
       this.boundOnTextRecognized = this.onTextRecognized.bind(this)
       this.boundOnTextTranslated = this.onTextTranslated.bind(this)
@@ -249,23 +244,23 @@ class TranslationDialog extends React.Component {
     }
 
     onSelectTranslationService(event) {
-      console.log("set translation service", event)
-      console.log("set translation service", event.target.value)
+      var newTranslationService = event.target.value
+      this.translateText(newTranslationService, this.state.originalText)
       this.setState({
-        translationService: event.target.value
-      })
-      console.log("state", this.state)
+        translationService:  newTranslationService
+      });
     };
 
     onTextRecognized(event) {
+      var newOriginalText = event.data.recognized_text
+      this.translateText(this.state.translationService, newOriginalText)
       this.setState({
         box: event.data.box,
         open: true,
         imageUri: event.data.image_uri,
         hocr: event.data.ocr_result.data.hocr,
-        recognizedText: event.data.recognized_text
+        originalText: newOriginalText
       })
-      this.translateText(this.state.translationService, this.state.recognizedText)
     }
     
     onTextTranslated(event) {
@@ -303,6 +298,12 @@ class TranslationDialog extends React.Component {
       })
     };
 
+    handleOriginalTextInput(event) {
+      this.setState({
+        originalText: event.target.value
+      });
+    }
+
     render() {
       var classes = this.makeClasses(this.state.box)
       return ( 
@@ -317,7 +318,7 @@ class TranslationDialog extends React.Component {
           open={this.state.open}
           fullWidth={false}
           scroll='body'
-          maxWidth='md'
+          maxWidth='xl'
           onClose={() => this.handleClose()}
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
@@ -338,10 +339,11 @@ class TranslationDialog extends React.Component {
               open={this.state.open} 
               hocr={this.state.hocr} 
               imageUri={this.state.imageUri}
-              recognizedText={this.state.recognizedText}
+              originalText={this.state.originalText}
               translatedText={this.state.translatedText}
-              translateText={() => this.translateText()}
+              translateText={() => this.translateText(this.state.translationService, this.state.originalText)}
               translationService={this.state.translationService}
+              onOriginalTextInput={(e) => this.handleOriginalTextInput(e)}
               onSelectTranslationService={(e) => this.onSelectTranslationService(e)}
             />
           </ErrorBoundary>

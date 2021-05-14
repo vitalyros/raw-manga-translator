@@ -10,6 +10,14 @@ export const EventTypes = {
     AreaSelectionExclusionZoneUpdate: 'AreaSelectionExclusionZoneUpdate',
     AreaSelectionExclusionZoneDragUpdate: 'AreaSelectionExclusionZoneDragUpdate',
 
+    GoogleTranslateTabTranslationRequested: 'GoogleTranslateTabTranslationRequested',
+    GoogleTranslateTabTranslationFinished: 'GoogleTranslateTabTranslationFinished',
+    GoogleTranslateTabTranslationEnabled: 'GoogleTranslateTabTranslationEnabled',
+
+    PageImageCaptured: 'PageImageCaptured',
+    
+    PageInitialized: 'PageInitialized',
+
     module_area_selection_enabled: 'module_area_selection_enabled',
 
     start_select_area: 'start_select_area',
