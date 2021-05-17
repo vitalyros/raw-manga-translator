@@ -8,7 +8,7 @@ var enabled = false;
 
 async function onTranslationRequested(event) {
     try {
-        if (event.data.serviceName === translation.TranslationService.GoogleTranslateApi) {
+        if (event.data.serviceName === translation.TranslationMethod.GoogleTranslateApi) {
             var res = await translate_api.translate(event.data.textToTranslate, { to: "en" })
             await events.fire({
                 from: module_name,

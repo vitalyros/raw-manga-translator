@@ -8,7 +8,7 @@ var enabled = false;
 async function onTranslationRequested(event) {
     try {
         console.log("translate", event)
-        if (event.data.serviceName === translation.TranslationService.Stub) {
+        if (event.data.serviceName === translation.TranslationMethod.Stub) {
             await events.fire({
                 from: module_name,
                 type: events.EventTypes.text_translated,

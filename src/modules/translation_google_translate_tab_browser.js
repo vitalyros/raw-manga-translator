@@ -10,18 +10,6 @@ var googleTranslateTab = null;
 var activeTab = null;
 var pendingTextToTranslate = null;
 
-async function waitForTabCompletion(tab) {
-    await new Promise(r => setTimeout(r, 200));
-    var interval = 0;
-    var maxIntervals = 50;
-    while (tab.status !== "complete" && interval < maxIntervals) {
-        console.log("awating for tab completion");
-        await new Promise(r => setTimeout(r, 100));
-        interval += 1;
-    } 
-    return tab.status !== "complete"
-}
-
 async function onTranslationFinished(event) {
     try {
         if (activeTab) {
@@ -46,7 +34,7 @@ async function onTranslationFinished(event) {
 
 async function onTranslationRequested(event) {
     try {
-        if (event.data.serviceName === translation.TranslationService.GoogleTranslateTab) {
+        if (event.data.serviceName === translation.TranslationMethod.GoogleTranslateTab) {
             activeTab = await tabs.getActiveTab()
             console.log("active tab", activeTab)
             var url = encodeURI(`https://translate.google.com/?sl=ja&tl=en&text=${event.data.textToTranslate}&op=translate`)

@@ -2,12 +2,16 @@ var events = require('./events.js');
 
 const module_name = 'area_selection';
 
+const borderWidth = 3;
+
 var enabled = false;
 
 var selection_mode = false;
 var document_bak = null;
 
 var isMouseDown = false;
+
+
 var endX = 0;
 var startX = 0;
 var endY = 0;
@@ -17,6 +21,9 @@ var areaThreshold = 400;
 
 var exclusionZones = {};
 var exclusionZoneDragged = false;
+
+var scrollX = 0;
+var scrollY = 0;
 
 async function startSelectionMode() {
     try {
@@ -49,6 +56,7 @@ async function startSelectionMode() {
                 e.preventDefault();
                 return false
             };
+            window.addEventListener('scroll', onScroll);
             selection_mode = true;
         }
     } catch (e) {
@@ -76,6 +84,7 @@ async function stopSelectionMode() {
                 if (typeof document.onselectstart !== 'undefined') {
                     document.onselectstart = document_bak.onselectstart;
                 }
+                window.removeEventListener('scroll', onScroll);
                 document_bak = null;
             }
             hideSelectionDiv();
@@ -128,9 +137,9 @@ function selectionDivUpperCornerY() {
 function initializeSelectionDiv() {
     if (typeof selectionDiv === "undefined" || selectionDiv === null) {
         selectionDiv = document.createElement("div");
-        selectionDiv.style.position = "fixed";
+        selectionDiv.style.position = "absolute";
         selectionDiv.style['z-index'] = 1299;
-        selectionDiv.style.border = "3px dashed black";
+        selectionDiv.style.border = `${borderWidth}px dashed black`;
         window.document.body.appendChild(selectionDiv);
     }
 }
@@ -147,15 +156,18 @@ function hideSelectionDiv() {
     }
 }
 
+
 function onMouseMove(event) {
     if (event.button != 0) {
         isMouseDown = false;
-        hideSelectionDiv();
+        // hideSelectionDiv();   
     }
     if (isMouseDown) {
         if (!exclusionZoneDragged && !isInExclusionZone(event.clientX, event.clientY)) {
-            endX = event.clientX;
-            endY = event.clientY;
+            scrollX = window.scrollX
+            scrollY = window.scrollY
+            endX = event.pageX;
+            endY = event.pageY;
             if (typeof selectionDiv !== "undefined" || selectionDiv == null) {
                 selectionDiv.style.left = `${selectionDivUpperCornerX()}px`;
                 selectionDiv.style.width = `${selectionDivWidth()}px`;
@@ -164,31 +176,57 @@ function onMouseMove(event) {
             }
         } else {
             isMouseDown = false;
-            hideSelectionDiv();
+            // hideSelectionDiv();
         }
     }
 }
+
+function onScroll(event) {
+    if (isMouseDown) {
+        if (!exclusionZoneDragged) {
+            endX -= scrollX;
+            scrollX = window.scrollX;
+            endX += scrollX;
+
+            endY -= scrollY;
+            scrollY = window.scrollY;
+            endY += scrollY;
+            if (typeof selectionDiv !== "undefined" || selectionDiv == null) {
+                selectionDiv.style.left = `${selectionDivUpperCornerX()}px`;
+                selectionDiv.style.width = `${selectionDivWidth()}px`;
+                selectionDiv.style.top = `${selectionDivUpperCornerY()}px`;
+                selectionDiv.style.height = `${selectionDivHeight()}px`;
+            }
+        } else {
+            isMouseDown = false;
+            // hideSelectionDiv();
+        }
+    }
+}
+
 
 function onMouseUp(event) {
     if (isMouseDown) {
         isMouseDown = false;
         if (!exclusionZoneDragged && !isInExclusionZone(event.clientX, event.clientY)) {
-            endX = event.clientX;
-            endY = event.clientY;
+            scrollX = window.scrollX
+            scrollY = window.scrollY
+            endX = event.pageX;
+            endY = event.pageY;
             console.log(`Ended Dragging ${endX} ${endY}`);
-            var x_visible = selectionDivUpperCornerX();
-            var y_visible = selectionDivUpperCornerY();
-            var x_scrolled = x_visible + window.scrollX;
-            var y_scrolled = y_visible + window.scrollY;
+            var x_scrolled = selectionDivUpperCornerX();
+            var y_scrolled = selectionDivUpperCornerY();
+            var x_visible = x_scrolled - scrollX;
+            var y_visible = y_scrolled - scrollY;
             var width = selectionDivWidth();
             var height = selectionDivHeight();
             var box = {
-                x_scrolled: x_scrolled,
-                y_scrolled: y_scrolled,
-                x_visible: x_visible,
-                y_visible: y_visible,
-                width: width,
-                height: height
+                x_scrolled: x_scrolled + borderWidth,
+                y_scrolled: y_scrolled + borderWidth,
+                x_visible: x_visible + borderWidth,
+                y_visible: y_visible + borderWidth,
+                width: width - borderWidth * 2,
+                height: height - borderWidth * 2
             }
             if (width * height >= areaThreshold) {
                 events.fire({
@@ -209,8 +247,10 @@ function onMouseUp(event) {
 function onMouseDown(event) {
     if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.clientX, event.clientY)) {
         isMouseDown = true;
-        startX = event.clientX;
-        startY = event.clientY;
+        scrollX = window.scrollX
+        scrollY = window.scrollY
+        startX = event.pageX;
+        startY = event.pageY;
         console.log(`Start Dragging ${startX} ${startY}`)
         initializeSelectionDiv();
         selectionDiv.style.left = `${startX}px`;

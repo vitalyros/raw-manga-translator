@@ -5,6 +5,13 @@
   
     "description": "raw manga translator",
 
+    "browser_specific_settings": {
+      "gecko": {
+      "id": "romatora@vitaly",
+      "strict_min_version": "0.0.1"
+      }
+    },
+
     "browser_action": {
     },
   
@@ -18,7 +25,8 @@
     "permissions": [
       "<all_urls>",
       "activeTab",
-      "menus"
+      "menus",
+      "storage"
     ],
 
     "background": {

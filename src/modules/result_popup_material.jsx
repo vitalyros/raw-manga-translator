@@ -1,7 +1,8 @@
 import * as events from "./events.js";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { makeStyles } from '@material-ui/core';
+import { makeStyles, useTheme } from '@material-ui/core';
+import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -19,9 +20,8 @@ import * as translation from './translation.js';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import ErrorBoundary from './error_boundary.jsx';
-// import List from '@material-ui/core/List';
-// import ListItem from '@material-ui/core/LisListItemt';
-
+import * as settings from './settings.js';
+import { theme } from '../themes/default.jsx';
 
 const module_name = 'result_popup';
 
@@ -114,7 +114,7 @@ function TranslationTool(props) {
     spacing={3}  
     direction="column"
     justify="flex-start"
-    alignItems="flex-start">
+    alignItems="stretch">
       <Grid item>
         <TextField
           id="romatora-recognized-text"
@@ -130,20 +130,22 @@ function TranslationTool(props) {
           variant="outlined"
         />
       </Grid>
-      <Toolbar color="inherit" variant="dense" style={{ width: "100%"}}>
-        <Select edge="start"
-          value={props.translationService}
-          onChange={props.onSelectTranslationService}
-        >
-          <MenuItem value={translation.TranslationService.GoogleTranslateTab}>Google Translate Tab</MenuItem>
-          <MenuItem value={translation.TranslationService.GoogleTranslateApi}>Google Translate Api</MenuItem>
-          <MenuItem value={translation.TranslationService.Stub}>Stub</MenuItem>
-        </Select>
-        <div style={{ flexGrow: 1 }} />
-        <Button edge="end" onClick={props.translateText} color="primary">
-          Translate
-        </Button>
-      </Toolbar>
+      <Grid item>
+        <Toolbar variant="dense" className={props.classes.translate_toolbar}>
+          <Select edge="start"
+            value={props.translationMethod}
+            onChange={props.onSelectTranslationMethod}
+          >
+            <MenuItem value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
+            <MenuItem value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
+            <MenuItem value={translation.TranslationMethod.Stub}>Stub</MenuItem>
+          </Select>
+          <div style={{ flexGrow: 1 }} />
+          <Button edge="end" className={props.classes.button_translate} onClick={props.translateText}>
+            Translate
+          </Button>
+        </Toolbar>
+      </Grid>
       <Grid item>
         <TextField
           id="romatora-translated-text"
@@ -166,208 +168,235 @@ function TranslationTool(props) {
    );
 }
 
-class ResultPopupTitle extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <DialogTitle style={{ cursor: 'move' }} id="romatora-draggable-dialog-title">
-        <Toolbar color="inherit" variant="dense">
-          <Typography edge="start" variant="h6" className={this.props.classes.title}>
-            ロマトラ
-          </Typography>
-          <div style={{ flexGrow: 1 }} />
-          <IconButton edge="end" onClick={this.props.handleClose} color="primary">
-            <CloseIcon />
-          </IconButton>
-        </Toolbar>
-      </DialogTitle>
-     );  
-  }
+function ResultPopupTitle(props) {
+  // const theme = useTheme();
+  // const classes = makeStyles({
+  //   title: {
+  //     cursor: 'move',
+  //     color: 'red',
+  //     backgroundColor: theme.palette.primary,
+  //     'background-color': theme.palette.primary.main,
+  //   },
+  //   toolbar: {
+  //     color: 'red',
+  //     backgroundColor: theme.palette.primary,
+  //     'background-color': theme.palette.primary.main,
+  //   }
+  // })(theme);
+  console.log("classes in title", props.classes)
+  return (
+    <DialogTitle className={props.classes.dialog_title} id="romatora-draggable-dialog-title">
+      <Toolbar className={props.classes.dialog_toolbar} variant="dense">
+        <Typography color="inherit" edge="start" variant="h6">
+          ロマトラ
+        </Typography>
+        <div style={{ flexGrow: 1 }} />
+        <IconButton edge="end" size="small" onClick={props.handleClose} className={props.classes.button_close}>
+          <CloseIcon />
+        </IconButton>
+      </Toolbar>
+    </DialogTitle>
+    );  
 }
 
-class ResultPopupContent extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (<DialogContent style={{ overflow: 'hidden'}} id="romatora-draggable-dialog-content">
+function ResultPopupContent(props) {
+  return (<DialogContent className={ props.classes.dialog_content} style={{ overflow: 'hidden'}} id="romatora-draggable-dialog-content">
       <Grid container 
       spacing={3}  
       direction="row"
       justify="flex-start"
       alignItems="flex-start">
-        <Grid item>
+        {/* <Grid item>
           <DisplayHocrWithImage hocr={this.props.hocr} imageUri={this.props.imageUri}/>
-        </Grid>
+        </Grid> */}
         <Grid item>
         <TranslationTool 
-          originalText={this.props.originalText} 
-          translatedText={this.props.translatedText}
-          translateText={this.props.translateText} 
-          translationService={this.props.translationService}
-          onOriginalTextInput={this.props.onOriginalTextInput}
-          onSelectTranslationService={this.props.onSelectTranslationService}/>
+          classes={props.classes}
+          originalText={props.originalText} 
+          translatedText={props.translatedText}
+          translateText={props.translateText} 
+          translationMethod={props.translationMethod}
+          onOriginalTextInput={props.onOriginalTextInput}
+          onSelectTranslationMethod={props.onSelectTranslationMethod}/>
         </Grid>
       </Grid>
     </DialogContent>);
-  }
 }
 
-class TranslationDialog extends React.Component {
-    constructor(props) {
-      super(props);
-      this.state = {
-        open: false,
-        box: { x_visible:0, y_visible: 0, width :0},
-        originalText: "",
-        translatedText: "",
-        hocr: null,
-        imageUri: null,
-        translationService: translation.TranslationService.GoogleTranslateTab
-      };
-      this.boundOnTextRecognized = this.onTextRecognized.bind(this)
-      this.boundOnTextTranslated = this.onTextTranslated.bind(this)
-    }
+function TranslationDialog(props) {
+    const [open, setOpen] = useState(false);  
+    const [box, setBox] = useState({ x_visible:0, y_visible: 0, width :0});  
+    const [originalText, setOriginalText] = useState("");  
+    const [translatedText, setTranslatedText] = useState("");  
+    const [hocr, setHocr] = useState(null);  
+    const [imageUri, setImageUri] = useState(null);  
+    const [translationMethod, setTranslationMethod] = useState(props.translationMethod);  
 
-    componentDidMount() {
-      events.addListener(this.boundOnTextRecognized, events.EventTypes.text_recognized)
-      events.addListener(this.boundOnTextTranslated, events.EventTypes.text_translated)
-    }
+    // const classes = makeStyles({
 
-    componentWillUnmount() { 
-      events.removeListener(this.boundOnTextRecognized, events.EventTypes.text_recognized)
-      events.removeListener(this.boundOnTextTranslated, events.EventTypes.text_translated)
-    }
+    // })(theme);
 
-    onSelectTranslationService(event) {
-      var newTranslationService = event.target.value
-      this.translateText(newTranslationService, this.state.originalText)
-      this.setState({
-        translationService:  newTranslationService
-      });
+    const onSelectTranslationMethod = (event) => {
+      var newTranslationMethod = event.target.value
+      settings.setDefaultTranslationMethod(newTranslationMethod)
+      translateText(newTranslationMethod, originalText)
+      setTranslationMethod(newTranslationMethod)
     };
 
-    onTextRecognized(event) {
+    const onTextRecognized = (event) => {
       var newOriginalText = event.data.recognized_text
-      this.translateText(this.state.translationService, newOriginalText)
-      this.setState({
-        box: event.data.box,
-        open: true,
-        imageUri: event.data.image_uri,
-        hocr: event.data.ocr_result.data.hocr,
-        originalText: newOriginalText
-      })
-    }
-    
-    onTextTranslated(event) {
-      this.setState({
-        translatedText: event.data.translatedText
-      })
+      setBox(event.data.box)
+      setOpen(true)
+      setImageUri(event.data.image_uri)
+      setHocr(event.data.ocr_result.data.hocr)
+      setOriginalText(newOriginalText)
+      translateText(translationMethod, newOriginalText)
     }
 
-    translateText(translationService, textToTranslate) {
-      events.fire({
-        type: events.EventTypes.translation_requested,
-        from: module_name,
-        data: {
-          serviceName: translationService,
-          textToTranslate: textToTranslate
-        }
-      })
+    const translateText = (translationMethod, textToTranslate) => {
+      setTranslatedText("")
+      if (textToTranslate && translationMethod) {
+        events.fire({
+          type: events.EventTypes.translation_requested,
+          from: module_name,
+          data: {
+            serviceName: translationMethod,
+            textToTranslate: textToTranslate
+          }
+        })
+      }
     }
     
-    makeClasses(box) { return makeStyles({
-        grow: {
-          flexGrow: 1,
-        },
+    const onTextTranslated = (event) => {
+      setTranslatedText(event.data.translatedText)
+    }
+    
+    useEffect(() => {
+      events.addListener(onTextTranslated, events.EventTypes.text_translated)
+      events.addListener(onTextRecognized, events.EventTypes.text_recognized)
+      return () => {
+        events.removeListener(onTextRecognized, events.EventTypes.text_recognized)
+        events.removeListener(onTextTranslated, events.EventTypes.text_translated)
+      }
+    });
+
+    const classes = makeStyles({
         dialog: {
           position: 'absolute',
           left: box.x_visible + box.width,
-          top: box.y_visible
+          top: box.y_visible,
+          border: `3px solid ${theme.palette.grey.main}`
         },
-      });
+        dialog_title: {
+          cursor: 'move',
+          'background-color': theme.palette.grey.main,
+          padding: 0,
+          'padding-left': 0,
+          'padding-right': 0,
+        },
+        dialog_toolbar: {
+          'background-color': theme.palette.grey.main,
+          'padding-left': '16px',
+          'padding-right': '16px'
+        },
+        translate_toolbar: {
+          'padding-left': '0px',
+          'padding-right': '0px'
+        },
+        dialog_content: {
+          padding: '16px'
+        },
+        button_close: {
+          color: 'black',
+          'background-color': theme.palette.primary.main,
+        },
+        button_translate: {
+          'background-color': theme.palette.secondary.main,
+        },
+
+        grow: {
+          flexGrow: 1,
+        },
+    })(theme);
+
+    const handleClose = () => {
+      setOpen(false)
     }
 
-    handleClose() {
-      this.setState({
-        open: false
-      })
-    };
-
-    handleOriginalTextInput(event) {
-      this.setState({
-        originalText: event.target.value
-      });
+    const handleOriginalTextInput = (event) => {
+      setOriginalText(event.target.value)
     }
 
-    render() {
-      var classes = this.makeClasses(this.state.box)
-      return ( 
+    console.log("classes", classes)
+    return ( 
+      <ThemeProvider theme={theme}>
         <Dialog 
           position="absolute"
           classes={{
             paper: classes.dialog
           }}
+          color="inherit"
           disableBackdropClick
           disableEnforceFocus
           hideBackdrop
-          open={this.state.open}
+          open={open}
           fullWidth={false}
           scroll='body'
           maxWidth='xl'
-          onClose={() => this.handleClose()}
+          onClose={handleClose}
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
           PaperComponent={PaperComponent}
           PaperProps={{
-            open: this.state.open
+            open: open
           }}
         >
           
           <ErrorBoundary>
             <ResultPopupTitle 
-              open={this.state.open}
-              classes={classes} 
-              handleClose={() => this.handleClose()}/>
+              open={open}
+              theme={theme}
+              classes={classes}
+              handleClose={handleClose}/>
           </ErrorBoundary>
           <ErrorBoundary>
             <ResultPopupContent
-              open={this.state.open} 
-              hocr={this.state.hocr} 
-              imageUri={this.state.imageUri}
-              originalText={this.state.originalText}
-              translatedText={this.state.translatedText}
-              translateText={() => this.translateText(this.state.translationService, this.state.originalText)}
-              translationService={this.state.translationService}
-              onOriginalTextInput={(e) => this.handleOriginalTextInput(e)}
-              onSelectTranslationService={(e) => this.onSelectTranslationService(e)}
+              open={open} 
+              hocr={hocr} 
+              imageUri={imageUri}
+              originalText={originalText}
+              translatedText={translatedText}
+              translateText={() => translateText(translationMethod, originalText)}
+              translationMethod={translationMethod}
+              onOriginalTextInput={handleOriginalTextInput}
+              onSelectTranslationMethod={onSelectTranslationMethod}
+              classes={classes}
             />
           </ErrorBoundary>
         </Dialog>
-      );
-    }
+      </ThemeProvider>
+    );
 }
 
 
-export async function onTestTranslated(event) {
-    try {
-        box = event.data.box;
-        var hocr_wrapper = document.createElement('div');
-        hocr_wrapper.innerHTML = raw_hocr;
-        hocr = hocr_wrapper.innerHTML;
-        if (!dialogCreated) {
-            createDialogWrapper(wrapper_div_id);
-            await ReactDOM.render(<TranslationDialog />, document.querySelector(`#${wrapper_div_id}`));
-            dialogCreated = true
-        }
-    } catch (e) {
-        logError("onTestTranslated", message, e)
-    }
-}
+// export async function onTestTranslated(event) {
+//     try {
+//         box = event.data.box;
+//         var hocr_wrapper = document.createElement('div');
+//         hocr_wrapper.innerHTML = raw_hocr;
+//         hocr = hocr_wrapper.innerHTML;
+
+      
+
+//         if (!dialogCreated) {
+//             createDialogWrapper(wrapper_div_id);
+//             await ReactDOM.render(<TranslationDialog translationMethod={translationMethod} />, document.querySelector(`#${wrapper_div_id}`));
+//             dialogCreated = true
+//         }
+//     } catch (e) {
+//         logError("onTestTranslated", message, e)
+//     }
+// }
 
 async function lazyInitComponent() {
   if (!wrapper_div) {
@@ -377,9 +406,14 @@ async function lazyInitComponent() {
   }
   if (!dialog_component) {
     try {
-      dialog_component = await ReactDOM.render(<TranslationDialog />, document.querySelector(`#${wrapper_div_id}`));
+      var translationMethod = await settings.getDefaultTranslationMethod()
+      console.log("translation method", translationMethod)
+      if (!translationMethod) {
+        translationMethod = translation.TranslationMethod.GoogleTranslateTab
+      }
+      dialog_component = await ReactDOM.render(<TranslationDialog translationMethod={translationMethod}/>, document.querySelector(`#${wrapper_div_id}`));
     } catch(e) {
-      console.error ("Failed to initialize popup", dialog_component, ee)
+      console.error ("Failed to initialize popup", dialog_component, e)
     }
   }
 }
