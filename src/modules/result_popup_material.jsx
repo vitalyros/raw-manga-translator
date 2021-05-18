@@ -104,10 +104,6 @@ class PaperComponent extends React.Component {
 }
 
 function TranslationTool(props) {
-  const textFieldStyle = {
-      minWidth: '350px'
-  };
-
   return (
     <div style={{ width: 'fit-content' }}>
   <Grid container
@@ -116,52 +112,58 @@ function TranslationTool(props) {
     justify="flex-start"
     alignItems="stretch">
       <Grid item>
-        <TextField
-          id="romatora-recognized-text"
-          label="Recognized"
-          multiline
-          noValidate
-          rows={5}
-          fullWidth
-          variant="outlined"
-          onChange={props.onOriginalTextInput}
-          value={props.originalText}
-          style={textFieldStyle}
-          variant="outlined"
-        />
+        <ErrorBoundary>
+          <TextField
+            id="romatora-recognized-text"
+            label="Recognized"
+            multiline
+            noValidate
+            rows={5}
+            fullWidth
+            variant="outlined"
+            onChange={props.onOriginalTextInput}
+            value={props.originalText}
+            className={props.classes.textfield}
+            variant="outlined"
+          />
+        </ErrorBoundary>
       </Grid>
       <Grid item>
-        <Toolbar variant="dense" className={props.classes.translate_toolbar}>
-          <Select edge="start"
-            value={props.translationMethod}
-            onChange={props.onSelectTranslationMethod}
-          >
-            <MenuItem value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
-            <MenuItem value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
-            <MenuItem value={translation.TranslationMethod.Stub}>Stub</MenuItem>
-          </Select>
-          <div style={{ flexGrow: 1 }} />
-          <Button edge="end" className={props.classes.button_translate} onClick={props.translateText}>
-            Translate
-          </Button>
-        </Toolbar>
+        <ErrorBoundary>
+          <Toolbar variant="dense" className={props.classes.translate_toolbar}>
+            <Select edge="start"
+              value={props.translationMethod}
+              onChange={props.onSelectTranslationMethod}
+            >
+              <MenuItem value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
+              <MenuItem value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
+              <MenuItem value={translation.TranslationMethod.Stub}>Stub</MenuItem>
+            </Select>
+            <div style={{ flexGrow: 1 }} />
+            <Button edge="end" className={props.classes.button_translate} onClick={props.translateText}>
+              Translate
+            </Button>
+          </Toolbar>
+        </ErrorBoundary>
       </Grid>
       <Grid item>
-        <TextField
-          id="romatora-translated-text"
-          label="Translated"
-          noValidate
-          multiline
-          fullWidth
-          variant="outlined"
-          InputProps={{
-            readOnly: true
-          }}
-          style={textFieldStyle}
-          rows={5}
-          value={props.translatedText}
-          variant="outlined"
-        />
+        <ErrorBoundary>
+          <TextField
+            id="romatora-translated-text"
+            label="Translated"
+            noValidate
+            multiline
+            fullWidth
+            variant="outlined"
+            InputProps={{
+              readOnly: true
+            }}
+            rows={5}
+            className={props.classes.textfield}
+            value={props.translatedText}
+            variant="outlined"
+          />
+        </ErrorBoundary>
       </Grid>
     </Grid>
     </div>
@@ -169,25 +171,11 @@ function TranslationTool(props) {
 }
 
 function ResultPopupTitle(props) {
-  // const theme = useTheme();
-  // const classes = makeStyles({
-  //   title: {
-  //     cursor: 'move',
-  //     color: 'red',
-  //     backgroundColor: theme.palette.primary,
-  //     'background-color': theme.palette.primary.main,
-  //   },
-  //   toolbar: {
-  //     color: 'red',
-  //     backgroundColor: theme.palette.primary,
-  //     'background-color': theme.palette.primary.main,
-  //   }
-  // })(theme);
   console.log("classes in title", props.classes)
   return (
     <DialogTitle className={props.classes.dialog_title} id="romatora-draggable-dialog-title">
       <Toolbar className={props.classes.dialog_toolbar} variant="dense">
-        <Typography color="inherit" edge="start" variant="h6">
+        <Typography className={props.classes.title_text} edge="start" variant="h6">
           ロマトラ
         </Typography>
         <div style={{ flexGrow: 1 }} />
@@ -231,10 +219,6 @@ function TranslationDialog(props) {
     const [hocr, setHocr] = useState(null);  
     const [imageUri, setImageUri] = useState(null);  
     const [translationMethod, setTranslationMethod] = useState(props.translationMethod);  
-
-    // const classes = makeStyles({
-
-    // })(theme);
 
     const onSelectTranslationMethod = (event) => {
       var newTranslationMethod = event.target.value
@@ -299,6 +283,16 @@ function TranslationDialog(props) {
           'padding-left': '16px',
           'padding-right': '16px'
         },
+        title_text: {
+          'color': theme.palette.primary.dark,
+          fontWeight: 800
+        },
+        textfield: {
+          minWidth: '350px',
+          '&:focus': {
+            color: theme.palette.grey.dark
+          }
+        },
         translate_toolbar: {
           'padding-left': '0px',
           'padding-right': '0px'
@@ -307,16 +301,17 @@ function TranslationDialog(props) {
           padding: '16px'
         },
         button_close: {
-          color: 'black',
+          color: theme.palette.primary.contrastText,
           'background-color': theme.palette.primary.main,
         },
         button_translate: {
+          color: theme.palette.secondary.contrastText,
           'background-color': theme.palette.secondary.main,
         },
-
         grow: {
           flexGrow: 1,
         },
+        
     })(theme);
 
     const handleClose = () => {
@@ -377,26 +372,6 @@ function TranslationDialog(props) {
       </ThemeProvider>
     );
 }
-
-
-// export async function onTestTranslated(event) {
-//     try {
-//         box = event.data.box;
-//         var hocr_wrapper = document.createElement('div');
-//         hocr_wrapper.innerHTML = raw_hocr;
-//         hocr = hocr_wrapper.innerHTML;
-
-      
-
-//         if (!dialogCreated) {
-//             createDialogWrapper(wrapper_div_id);
-//             await ReactDOM.render(<TranslationDialog translationMethod={translationMethod} />, document.querySelector(`#${wrapper_div_id}`));
-//             dialogCreated = true
-//         }
-//     } catch (e) {
-//         logError("onTestTranslated", message, e)
-//     }
-// }
 
 async function lazyInitComponent() {
   if (!wrapper_div) {
