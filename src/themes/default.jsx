@@ -7,7 +7,7 @@ var themeBuilder = createMuiTheme({
       primary: {
         light: lightGreen[200],
         main: lightGreen[300],
-        contrastText: grey[900]
+        contrastText: grey[800]
       },
       secondary: {
         main: amber[300],
@@ -23,31 +23,28 @@ var themeBuilder = createMuiTheme({
         main: orange[500],
       },
       grey: {
-        light: grey[100],
-        main: grey[200],
-        dark: grey[300]
+        light: grey[200],
+        main: grey[400],
+        dark: grey[600],
+        veryDark: grey[900],
       }
     },
     overrides: {
-      MuiFormLabel: {
-        root: {
-          "&$focused": {
-            color: grey[600],
-            fontWeight: "bold"
-          }
-        }, 
-        
-        focused: {}
-      },
-      MuiOutlinedInput: {
-        root: {
-          "&$focused": {
-            'border-color': grey[600],
-            'border-width': '2px'
-          }
-        }, 
-        focused: {}
-      }
+      // MuiFormLabel: {
+      //   root: {
+      //     // "&$focused": {
+      //     //   color: grey[700],
+      //     //   fontWeight: "bold",
+      //     // },
+      //     // "& .MuiOutlinedInput-notchedOutline": {
+      //     //   borderColor: "blue"
+      //     // },
+      //     // "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+      //     //   borderColor: "red"
+      //     // }
+      //   }, 
+      //   focused: {}
+      // },
     }
 
     // props: {

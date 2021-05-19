@@ -22,6 +22,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import ErrorBoundary from './error_boundary.jsx';
 import * as settings from './settings.js';
 import { theme } from '../themes/default.jsx';
+import { ThreeSixtySharp } from "@material-ui/icons";
 
 const module_name = 'result_popup';
 
@@ -32,9 +33,19 @@ var dialog_component = null;
 
 function fireExclusionZoneUpdate(component, exclusionAreaName, nodeOpen) {
   var node = ReactDOM.findDOMNode(component);
-  console.log('title node', node)
-  var rect = node.getBoundingClientRect();
-  console.log("title bounding", rect.top, rect.right, rect.bottom, rect.left);
+  var boundingRect = node.getBoundingClientRect();
+  var scrollX = window.scrollX;
+  var scrollY = window.scrollY;
+  var rect = {
+    x: boundingRect.x + scrollX,
+    y: boundingRect.y + scrollY,
+    left: boundingRect.left + scrollX,
+    right: boundingRect.right + scrollX,
+    top: boundingRect.top + scrollY,
+    bottom: boundingRect.bottom + scrollY,
+    width: boundingRect.width,
+    height: boundingRect.height
+  }
   if (nodeOpen) {
     events.fire({
       type: events.EventTypes.AreaSelectionExclusionZoneUpdate,
@@ -60,11 +71,21 @@ function fireExclusionZoneUpdate(component, exclusionAreaName, nodeOpen) {
 class PaperComponent extends React.Component {
   constructor(props) {
     super(props)
-
+    this.state = {
+      position: {x: 0, y: 0},
+      // position: this.props.defaultPosition
+    }
     this.exclusionAreaName="result_popup_paper"
+    this.onTextRecognizedWrapped = (e) => this.onTextRecognized(e)
+    // this.scale= document.width / jQuery(document).width()
+    this.pixelratio = window.devicePixelRatio
+    // console.log("scale", scale)
+    console.log("devicePixelRatio", this.pixelratio)
+    this._child = React.createRef();
   }
   
-  onDragStart() {
+  onDragStart(event, data) {
+    console.log("on drag start", data)
     events.fire({
       type: events.EventTypes.AreaSelectionExclusionZoneDragUpdate,
       from: module_name,
@@ -74,7 +95,8 @@ class PaperComponent extends React.Component {
     });
   }
   
-  onDragStop() {
+  onDragStop(event, data) {
+    console.log("on drag stop", data)
     events.fire({
       type: events.EventTypes.AreaSelectionExclusionZoneDragUpdate,
       from: module_name,
@@ -85,6 +107,35 @@ class PaperComponent extends React.Component {
     fireExclusionZoneUpdate(this, this.exclusionAreaName, this.props.open)
   }
 
+  onDrag(event, data) {
+    this.setState({
+      position: {
+        x: data.x,
+        y: data.y
+      }
+    })
+  }
+
+  onTextRecognized(event) {
+    console.log("Reset state", this._child); 
+    console.log("Draggable text recognized", event)
+    this.setState({
+      position: { 
+        x: 0,
+        y: 0}
+    })
+    fireExclusionZoneUpdate(this, this.exclusionAreaName, this.props.open)
+  }
+
+  componentDidMount() {
+    console.log("Draggable mounted")
+    events.addListener(this.onTextRecognizedWrapped, events.EventTypes.text_recognized)
+  }
+
+  componentWillUnmount() {
+    events.removeListener(this.onTextRecognizedWrapped, events.EventTypes.text_recognized)
+  }
+
   componentDidUpdate() {
     fireExclusionZoneUpdate(this, this.exclusionAreaName, this.props.open)
   }
@@ -92,10 +143,18 @@ class PaperComponent extends React.Component {
   render() {
     return (
       <Draggable 
+        // defaultPosition={this.props.defaultPosition}
+        // bounds={{ left:0, top: 0 }}
+        // positionOffset={{x:0, y:0}}
+        // grid={[25, 25]}
+        // scale={this.pixelratio}
+        position={this.state.position}
+        // offsetParent={document}
         handle="#romatora-draggable-dialog-title" 
         cancel={'[class*="MuiDialogContent-root"]'}
-        onStart={() => this.onDragStart()}
-        onStop={() => this.onDragStop()}
+        onStart={(e, d) => this.onDragStart(e, d)}
+        onDrag={(e, d) => this.onDrag(e, d)}
+        onStop={(e, d) => this.onDragStop(e, d)}
         >
         <Paper {...this.props} />
       </Draggable>
@@ -171,13 +230,12 @@ function TranslationTool(props) {
 }
 
 function ResultPopupTitle(props) {
-  console.log("classes in title", props.classes)
   return (
     <DialogTitle className={props.classes.dialog_title} id="romatora-draggable-dialog-title">
       <Toolbar className={props.classes.dialog_toolbar} variant="dense">
-        <Typography className={props.classes.title_text} edge="start" variant="h6">
+        {/* <Typography className={props.classes.title_text} edge="start" variant="h6">
           ロマトラ
-        </Typography>
+        </Typography> */}
         <div style={{ flexGrow: 1 }} />
         <IconButton edge="end" size="small" onClick={props.handleClose} className={props.classes.button_close}>
           <CloseIcon />
@@ -213,7 +271,7 @@ function ResultPopupContent(props) {
 
 function TranslationDialog(props) {
     const [open, setOpen] = useState(false);  
-    const [box, setBox] = useState({ x_visible:0, y_visible: 0, width :0});  
+    const [defaultPosition, setDefaultPosition] = useState({ x: 0, y: 0 })
     const [originalText, setOriginalText] = useState("");  
     const [translatedText, setTranslatedText] = useState("");  
     const [hocr, setHocr] = useState(null);  
@@ -229,7 +287,13 @@ function TranslationDialog(props) {
 
     const onTextRecognized = (event) => {
       var newOriginalText = event.data.recognized_text
-      setBox(event.data.box)
+      var xPositionThreshold = 432;
+      var defaultY = event.data.box.y_scrolled
+      var defaultX = event.data.box.x_scrolled + event.data.box.width;
+      if (defaultX > window.screen.width - xPositionThreshold) {
+        defaultX = event.data.box.x_scrolled - xPositionThreshold
+      }
+      setDefaultPosition({ x: defaultX, y: defaultY})
       setOpen(true)
       setImageUri(event.data.image_uri)
       setHocr(event.data.ocr_result.data.hocr)
@@ -267,19 +331,23 @@ function TranslationDialog(props) {
     const classes = makeStyles({
         dialog: {
           position: 'absolute',
-          left: box.x_visible + box.width,
-          top: box.y_visible,
-          border: `3px solid ${theme.palette.grey.main}`
+        },
+        dialog_paper: {
+          position: 'absolute',
+          left: defaultPosition.x,
+          top: defaultPosition.y,
+          margin: '0 16px 0 16px',
+          border: `3px solid ${theme.palette.grey.light}`
         },
         dialog_title: {
           cursor: 'move',
-          'background-color': theme.palette.grey.main,
+          'background-color': theme.palette.grey.light,
           padding: 0,
           'padding-left': 0,
           'padding-right': 0,
         },
         dialog_toolbar: {
-          'background-color': theme.palette.grey.main,
+          'background-color': theme.palette.grey.light,
           'padding-left': '16px',
           'padding-right': '16px'
         },
@@ -289,9 +357,20 @@ function TranslationDialog(props) {
         },
         textfield: {
           minWidth: '350px',
-          '&:focus': {
-            color: theme.palette.grey.dark
-          }
+          "&:hover .MuiInputLabel-outlined.Mui-focused": {
+            color: theme.palette.grey.veryDark
+          },
+          "& .MuiInputLabel-outlined.Mui-focused": {
+            color: theme.palette.grey.dark,
+            fontWeight: "bold"
+          },
+          "&:hover .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+            borderColor: theme.palette.grey.veryDark,
+          },
+          "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: theme.palette.grey.dark ,
+            borderWidth: "2px",
+          },
         },
         translate_toolbar: {
           'padding-left': '0px',
@@ -322,14 +401,15 @@ function TranslationDialog(props) {
       setOriginalText(event.target.value)
     }
 
-    console.log("classes", classes)
     return ( 
       <ThemeProvider theme={theme}>
         <Dialog 
-          position="absolute"
           classes={{
-            paper: classes.dialog
+            root: classes.dialog,
+            paper: classes.dialog_paper
           }}
+          style = {{ position: "absolute"}}
+          position="absolute"
           color="inherit"
           disableBackdropClick
           disableEnforceFocus
@@ -343,7 +423,8 @@ function TranslationDialog(props) {
           aria-describedby="alert-dialog-description"
           PaperComponent={PaperComponent}
           PaperProps={{
-            open: open
+            open: open,
+            // defaultPosition: defaultPosition
           }}
         >
           

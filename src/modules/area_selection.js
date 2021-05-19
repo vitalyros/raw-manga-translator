@@ -2,7 +2,7 @@ var events = require('./events.js');
 
 const module_name = 'area_selection';
 
-const borderWidth = 3;
+const borderWidth = 2;
 
 var enabled = false;
 
@@ -21,6 +21,8 @@ var areaThreshold = 400;
 
 var exclusionZones = {};
 var exclusionZoneDragged = false;
+var exclusionZonesDivs = {};
+var debugExclusionZones = true;
 
 var scrollX = 0;
 var scrollY = 0;
@@ -139,7 +141,7 @@ function initializeSelectionDiv() {
         selectionDiv = document.createElement("div");
         selectionDiv.style.position = "absolute";
         selectionDiv.style['z-index'] = 1299;
-        selectionDiv.style.border = `${borderWidth}px dashed black`;
+        selectionDiv.style.border = `${borderWidth}px dashed #212121`;
         window.document.body.appendChild(selectionDiv);
     }
 }
@@ -163,7 +165,12 @@ function onMouseMove(event) {
         // hideSelectionDiv();   
     }
     if (isMouseDown) {
-        if (!exclusionZoneDragged && !isInExclusionZone(event.clientX, event.clientY)) {
+        if (exclusionZoneDragged) {
+            isMouseDown = false;
+        } else if (isInExclusionZone(event.pageX, event.pageY)) {
+            isMouseDown = false;
+            hideSelectionDiv();
+        } else {
             scrollX = window.scrollX
             scrollY = window.scrollY
             endX = event.pageX;
@@ -174,9 +181,6 @@ function onMouseMove(event) {
                 selectionDiv.style.top = `${selectionDivUpperCornerY()}px`;
                 selectionDiv.style.height = `${selectionDivHeight()}px`;
             }
-        } else {
-            isMouseDown = false;
-            // hideSelectionDiv();
         }
     }
 }
@@ -208,7 +212,7 @@ function onScroll(event) {
 function onMouseUp(event) {
     if (isMouseDown) {
         isMouseDown = false;
-        if (!exclusionZoneDragged && !isInExclusionZone(event.clientX, event.clientY)) {
+        if (!exclusionZoneDragged && !isInExclusionZone(event.pageX, event.pageY)) {
             scrollX = window.scrollX
             scrollY = window.scrollY
             endX = event.pageX;
@@ -237,7 +241,7 @@ function onMouseUp(event) {
                     }
                 })
             } else {
-                console.log('area selection threshold not reached');
+                hideSelectionDiv();
             }
         }
         hideSelectionDiv();
@@ -245,7 +249,7 @@ function onMouseUp(event) {
 }
 
 function onMouseDown(event) {
-    if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.clientX, event.clientY)) {
+    if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY)) {
         isMouseDown = true;
         scrollX = window.scrollX
         scrollY = window.scrollY
@@ -279,10 +283,32 @@ function isInExclusionZone(x, y) {
 }
 
 function onExclusionZoneUpdate(event) {
+    var rect = event.data.rect
+    var name = event.data.name
     if (event.data.remove) {
-        delete exclusionZones[event.data.name]
+        delete exclusionZones[name]
+        if (debugExclusionZones) {
+            delete exclusionZonesDivs[name]
+        }
     } else {
-        exclusionZones[event.data.name] = event.data.rect
+        exclusionZones[name] = rect
+        if (debugExclusionZones) {
+            var borderWidth = 3
+            var exclusionZoneDiv = exclusionZonesDivs[name]
+            if (!exclusionZoneDiv) {
+                exclusionZoneDiv = document.createElement("div");
+                exclusionZoneDiv.style.position = 'absolute';
+                exclusionZoneDiv.style['z-index']= 1200;
+                exclusionZoneDiv.style.border = `${borderWidth}px solid red`;
+                window.document.body.appendChild(exclusionZoneDiv);
+                exclusionZonesDivs[name] = exclusionZoneDiv
+            }
+            exclusionZoneDiv.style.left = `${rect.x - borderWidth}px`;
+            exclusionZoneDiv.style.width = `${rect.width + borderWidth * 2}px`;
+            exclusionZoneDiv.style.top = `${rect.y - borderWidth}px`;
+            exclusionZoneDiv.style.height = `${rect.height + borderWidth * 2}px`;
+        }
+            
     }
 }
 
