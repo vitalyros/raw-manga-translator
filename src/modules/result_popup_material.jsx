@@ -23,6 +23,7 @@ import ErrorBoundary from './error_boundary.jsx';
 import * as settings from './settings.js';
 import { theme } from '../themes/default.jsx';
 import { ThreeSixtySharp } from "@material-ui/icons";
+import _ from "lodash";
 
 const module_name = 'result_popup';
 
@@ -31,49 +32,14 @@ const wrapper_div_id = "romatora-translation-popup-wrapper"
 var wrapper_div = null;
 var dialog_component = null;
 
-function fireExclusionZoneUpdate(component, exclusionAreaName, nodeOpen) {
-  var node = ReactDOM.findDOMNode(component);
-  var boundingRect = node.getBoundingClientRect();
-  var scrollX = window.scrollX;
-  var scrollY = window.scrollY;
-  var rect = {
-    x: boundingRect.x + scrollX,
-    y: boundingRect.y + scrollY,
-    left: boundingRect.left + scrollX,
-    right: boundingRect.right + scrollX,
-    top: boundingRect.top + scrollY,
-    bottom: boundingRect.bottom + scrollY,
-    width: boundingRect.width,
-    height: boundingRect.height
-  }
-  if (nodeOpen) {
-    events.fire({
-      type: events.EventTypes.AreaSelectionExclusionZoneUpdate,
-      from: module_name,
-      data: {
-        name: exclusionAreaName,
-        remove: false,
-        rect: rect
-      }
-    });
-  } else {
-    events.fire({
-      type: events.EventTypes.AreaSelectionExclusionZoneUpdate,
-      from: module_name,
-      data: {
-        name: exclusionAreaName,
-        remove: true
-      }
-    });
-  }
-}
+
 
 class PaperComponent extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       position: {x: 0, y: 0},
-      // position: this.props.defaultPosition
+      lastReportedExclusionAreaEventData: null
     }
     this.exclusionAreaName="result_popup_paper"
     this.onTextRecognizedWrapped = (e) => this.onTextRecognized(e)
@@ -104,7 +70,7 @@ class PaperComponent extends React.Component {
         dragged: false
       }
     });
-    fireExclusionZoneUpdate(this, this.exclusionAreaName, this.props.open)
+    this.fireExclusionZoneUpdate()
   }
 
   onDrag(event, data) {
@@ -117,18 +83,60 @@ class PaperComponent extends React.Component {
   }
 
   onTextRecognized(event) {
-    console.log("Reset state", this._child); 
-    console.log("Draggable text recognized", event)
     this.setState({
       position: { 
         x: 0,
         y: 0}
     })
-    fireExclusionZoneUpdate(this, this.exclusionAreaName, this.props.open)
+    this.fireExclusionZoneUpdate()
+  }
+
+  fireExclusionZoneUpdate() {
+    try {
+      var eventData = null;
+      if (this.props.open) {
+        var node = ReactDOM.findDOMNode(this);
+        var boundingRect = node.getBoundingClientRect();
+        var scrollX = window.scrollX;
+        var scrollY = window.scrollY;
+        var rect = {
+          x: boundingRect.x + scrollX,
+          y: boundingRect.y + scrollY,
+          left: boundingRect.left + scrollX,
+          right: boundingRect.right + scrollX,
+          top: boundingRect.top + scrollY,
+          bottom: boundingRect.bottom + scrollY,
+          width: boundingRect.width,
+          height: boundingRect.height
+        }
+        eventData = {
+          name: this.exclusionAreaName,
+          remove: false,
+          rect: rect
+        }
+        
+      } else {
+        eventData = {
+          name: this.exclusionAreaName,
+          remove: true
+        }
+      }
+      if (eventData && !_.isEqual(eventData, this.state.lastReportedExclusionAreaEventData)) {
+        events.fire({
+          type: events.EventTypes.AreaSelectionExclusionZoneUpdate,
+          from: module_name,
+          data: eventData
+        });
+        this.setState({
+          lastReportedExclusionAreaEventData: eventData
+        });
+      }
+    } catch(e) {
+      console.error("failed to fire exclusion zone update", this, e)
+    }
   }
 
   componentDidMount() {
-    console.log("Draggable mounted")
     events.addListener(this.onTextRecognizedWrapped, events.EventTypes.text_recognized)
   }
 
@@ -137,7 +145,7 @@ class PaperComponent extends React.Component {
   }
 
   componentDidUpdate() {
-    fireExclusionZoneUpdate(this, this.exclusionAreaName, this.props.open)
+    this.fireExclusionZoneUpdate()
   }
 
   render() {
@@ -166,7 +174,7 @@ function TranslationTool(props) {
   return (
     <div style={{ width: 'fit-content' }}>
   <Grid container
-    spacing={3}  
+    spacing={1}  
     direction="column"
     justify="flex-start"
     alignItems="stretch">
@@ -182,7 +190,7 @@ function TranslationTool(props) {
             variant="outlined"
             onChange={props.onOriginalTextInput}
             value={props.originalText}
-            className={props.classes.textfield}
+            className={props.classes.textfield_original_text}
             variant="outlined"
           />
         </ErrorBoundary>
@@ -191,15 +199,16 @@ function TranslationTool(props) {
         <ErrorBoundary>
           <Toolbar variant="dense" className={props.classes.translate_toolbar}>
             <Select edge="start"
+              className={props.classes.translate_method_select}
               value={props.translationMethod}
               onChange={props.onSelectTranslationMethod}
             >
-              <MenuItem value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
-              <MenuItem value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
-              <MenuItem value={translation.TranslationMethod.Stub}>Stub</MenuItem>
+              <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
+              <MenuItem className={props.classes.translate_method_select_menu_item} alue={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
+              <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.Stub}>Stub</MenuItem>
             </Select>
             <div style={{ flexGrow: 1 }} />
-            <Button edge="end" className={props.classes.button_translate} onClick={props.translateText}>
+            <Button edge="end" className={props.classes.translate_button} onClick={props.translateText}>
               Translate
             </Button>
           </Toolbar>
@@ -218,7 +227,7 @@ function TranslationTool(props) {
               readOnly: true
             }}
             rows={5}
-            className={props.classes.textfield}
+            className={props.classes.textfield_translated_text}
             value={props.translatedText}
             variant="outlined"
           />
@@ -237,7 +246,7 @@ function ResultPopupTitle(props) {
           ロマトラ
         </Typography> */}
         <div style={{ flexGrow: 1 }} />
-        <IconButton edge="end" size="small" onClick={props.handleClose} className={props.classes.button_close}>
+        <IconButton edge="end" size="small" onClick={props.handleClose} className={props.classes.close_button}>
           <CloseIcon />
         </IconButton>
       </Toolbar>
@@ -349,28 +358,54 @@ function TranslationDialog(props) {
         dialog_toolbar: {
           'background-color': theme.palette.grey.light,
           'padding-left': '16px',
-          'padding-right': '16px'
+          'padding-right': '16px',
+          minHeight: '42px' 
         },
         title_text: {
           'color': theme.palette.primary.dark,
           fontWeight: 800
         },
-        textfield: {
+        translate_method_select: {
+          color: theme.palette.primary.veryDark,
+          fontSize: "0.9rem"
+        },
+        translate_method_select_menu_item: {
+          color: theme.palette.primary.veryDark,
+          fontSize: "0.9rem"
+        },
+        textfield_original_text : {
           minWidth: '350px',
-          "&:hover .MuiInputLabel-outlined.Mui-focused": {
-            color: theme.palette.grey.veryDark
+          marginBottom: '2px',
+          "&:hover .MuiInputLabel-outlined": {
+            color: theme.palette.grey.dark
           },
           "& .MuiInputLabel-outlined.Mui-focused": {
-            color: theme.palette.grey.dark,
-            fontWeight: "bold"
+            color: theme.palette.grey.veryDark,
           },
           "&:hover .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-            borderColor: theme.palette.grey.veryDark,
+            borderColor: theme.palette.grey.dark,
           },
           "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-            borderColor: theme.palette.grey.dark ,
-            borderWidth: "2px",
+            borderColor: theme.palette.grey.veryDark,
+            borderWidth: '1px'
           },
+        },
+        textfield_translated_text: {
+          minWidth: '350px',
+          marginBottom: '2px',
+          // "&:hover .MuiInputLabel-outlined": {
+          //   color: theme.palette.grey.main
+          // },
+          // "& .MuiInputLabel-outlined.Mui-focused": {
+          //   color: theme.palette.grey.main,
+          // },
+          // "&:hover .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+          //   borderColor: theme.palette.grey.main,
+          // },
+          // "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+          //   borderColor: theme.palette.grey.main,
+          //   borderWidth: '1px'
+          // },
         },
         translate_toolbar: {
           'padding-left': '0px',
@@ -379,13 +414,15 @@ function TranslationDialog(props) {
         dialog_content: {
           padding: '16px'
         },
-        button_close: {
+        close_button: {
           color: theme.palette.primary.contrastText,
           'background-color': theme.palette.primary.main,
         },
-        button_translate: {
+        translate_button: {
           color: theme.palette.secondary.contrastText,
           'background-color': theme.palette.secondary.main,
+          'padding-left': '12px',
+          'padding-right': '12px'
         },
         grow: {
           flexGrow: 1,

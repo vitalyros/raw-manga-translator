@@ -22,7 +22,7 @@ var areaThreshold = 400;
 var exclusionZones = {};
 var exclusionZoneDragged = false;
 var exclusionZonesDivs = {};
-var debugExclusionZones = true;
+var debugExclusionZones = false;
 
 var scrollX = 0;
 var scrollY = 0;
@@ -288,7 +288,12 @@ function onExclusionZoneUpdate(event) {
     if (event.data.remove) {
         delete exclusionZones[name]
         if (debugExclusionZones) {
-            delete exclusionZonesDivs[name]
+            var exclusionZoneDiv = exclusionZonesDivs[name]
+            if (exclusionZoneDiv) {
+                window.document.body.removeChild(exclusionZoneDiv);
+                delete exclusionZonesDivs[name]
+            }
+            
         }
     } else {
         exclusionZones[name] = rect

@@ -23,9 +23,9 @@ var themeBuilder = createMuiTheme({
         main: orange[500],
       },
       grey: {
-        light: grey[200],
-        main: grey[400],
-        dark: grey[600],
+        light: grey[300],
+        main: grey[500],
+        dark: grey[700],
         veryDark: grey[900],
       }
     },
