@@ -22,7 +22,6 @@ import MenuItem from '@material-ui/core/MenuItem';
 import ErrorBoundary from './error_boundary.jsx';
 import * as settings from './settings.js';
 import { theme } from '../themes/default.jsx';
-import { ThreeSixtySharp } from "@material-ui/icons";
 import _ from "lodash";
 
 const module_name = 'result_popup';
@@ -31,8 +30,6 @@ var enabled = false;
 const wrapper_div_id = "romatora-translation-popup-wrapper"
 var wrapper_div = null;
 var dialog_component = null;
-
-
 
 class PaperComponent extends React.Component {
   constructor(props) {
@@ -43,11 +40,6 @@ class PaperComponent extends React.Component {
     }
     this.exclusionAreaName="result_popup_paper"
     this.onTextRecognizedWrapped = (e) => this.onTextRecognized(e)
-    // this.scale= document.width / jQuery(document).width()
-    this.pixelratio = window.devicePixelRatio
-    // console.log("scale", scale)
-    console.log("devicePixelRatio", this.pixelratio)
-    this._child = React.createRef();
   }
   
   onDragStart(event, data) {
@@ -151,13 +143,7 @@ class PaperComponent extends React.Component {
   render() {
     return (
       <Draggable 
-        // defaultPosition={this.props.defaultPosition}
-        // bounds={{ left:0, top: 0 }}
-        // positionOffset={{x:0, y:0}}
-        // grid={[25, 25]}
-        // scale={this.pixelratio}
         position={this.state.position}
-        // offsetParent={document}
         handle="#romatora-draggable-dialog-title" 
         cancel={'[class*="MuiDialogContent-root"]'}
         onStart={(e, d) => this.onDragStart(e, d)}
@@ -171,6 +157,9 @@ class PaperComponent extends React.Component {
 }
 
 function TranslationTool(props) {
+  const languageMenuItems = translation.TranslationLanguageList.map((lang, i) => {
+    return <MenuItem key={i} className={props.classes.translate_language_select_menu_item} value={lang.name}>{lang.name}</MenuItem>
+  })
   return (
     <div style={{ width: 'fit-content' }}>
   <Grid container
@@ -188,6 +177,7 @@ function TranslationTool(props) {
             rows={5}
             fullWidth
             variant="outlined"
+            onKeyDown={props.onOriginalTextKeyDown}
             onChange={props.onOriginalTextInput}
             value={props.originalText}
             className={props.classes.textfield_original_text}
@@ -204,11 +194,17 @@ function TranslationTool(props) {
               onChange={props.onSelectTranslationMethod}
             >
               <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
-              <MenuItem className={props.classes.translate_method_select_menu_item} alue={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
+              <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
               <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.Stub}>Stub</MenuItem>
             </Select>
+            <Select
+              className={props.classes.translate_language_select}
+              value={props.translationLanguage}
+              onChange={props.onSelectTranslationLanguage}>
+              {languageMenuItems}
+            </Select>
             <div style={{ flexGrow: 1 }} />
-            <Button edge="end" className={props.classes.translate_button} onClick={props.translateText}>
+            <Button edge="end" className={props.classes.translate_button} onClick={props.translate}>
               Translate
             </Button>
           </Toolbar>
@@ -222,6 +218,7 @@ function TranslationTool(props) {
             noValidate
             multiline
             fullWidth
+            disabled
             variant="outlined"
             InputProps={{
               readOnly: true
@@ -242,9 +239,9 @@ function ResultPopupTitle(props) {
   return (
     <DialogTitle className={props.classes.dialog_title} id="romatora-draggable-dialog-title">
       <Toolbar className={props.classes.dialog_toolbar} variant="dense">
-        {/* <Typography className={props.classes.title_text} edge="start" variant="h6">
-          ロマトラ
-        </Typography> */}
+        <Typography className={props.classes.title_text} edge="start" variant="subtitle1">
+          Translation
+        </Typography>
         <div style={{ flexGrow: 1 }} />
         <IconButton edge="end" size="small" onClick={props.handleClose} className={props.classes.close_button}>
           <CloseIcon />
@@ -269,10 +266,13 @@ function ResultPopupContent(props) {
           classes={props.classes}
           originalText={props.originalText} 
           translatedText={props.translatedText}
-          translateText={props.translateText} 
+          translate={props.translate}
           translationMethod={props.translationMethod}
+          translationLanguage={props.translationLanguage}
           onOriginalTextInput={props.onOriginalTextInput}
-          onSelectTranslationMethod={props.onSelectTranslationMethod}/>
+          onOriginalTextKeyDown={props.onOriginalTextKeyDown}
+          onSelectTranslationMethod={props.onSelectTranslationMethod}
+          onSelectTranslationLanguage={props.onSelectTranslationLanguage}/>
         </Grid>
       </Grid>
     </DialogContent>);
@@ -286,17 +286,26 @@ function TranslationDialog(props) {
     const [hocr, setHocr] = useState(null);  
     const [imageUri, setImageUri] = useState(null);  
     const [translationMethod, setTranslationMethod] = useState(props.translationMethod);  
+    const [translationLanguage, setTranslationLanguage] = useState(props.translationLanguage)
+    const [translationRequestedAfterInput, setTranslationRequestedAfterInput] = useState(false)
 
     const onSelectTranslationMethod = (event) => {
       var newTranslationMethod = event.target.value
       settings.setDefaultTranslationMethod(newTranslationMethod)
-      translateText(newTranslationMethod, originalText)
+      translateText(newTranslationMethod, translationLanguage, originalText)
       setTranslationMethod(newTranslationMethod)
     };
 
+    const onSelectTranslationLanguage = (event) => {
+      var newTranslationLanguage = event.target.value
+      settings.setDefaultTranslationLanguage(newTranslationLanguage)
+      translateText(translationMethod, newTranslationLanguage, originalText)
+      setTranslationLanguage(newTranslationLanguage)
+    }
+
     const onTextRecognized = (event) => {
       var newOriginalText = event.data.recognized_text
-      var xPositionThreshold = 432;
+      var xPositionThreshold = 442;
       var defaultY = event.data.box.y_scrolled
       var defaultX = event.data.box.x_scrolled + event.data.box.width;
       if (defaultX > window.screen.width - xPositionThreshold) {
@@ -307,23 +316,25 @@ function TranslationDialog(props) {
       setImageUri(event.data.image_uri)
       setHocr(event.data.ocr_result.data.hocr)
       setOriginalText(newOriginalText)
-      translateText(translationMethod, newOriginalText)
+      translateText(translationMethod, translationLanguage, newOriginalText)
     }
 
-    const translateText = (translationMethod, textToTranslate) => {
-      setTranslatedText("")
-      if (textToTranslate && translationMethod) {
+    const translateText = (translationMethod, translationLanguage, textToTranslate) => {
+      if (textToTranslate && translationMethod && translationLanguage) {
         events.fire({
           type: events.EventTypes.translation_requested,
           from: module_name,
           data: {
-            serviceName: translationMethod,
+            translationMethod: translationMethod,
+            translationLanguage: translationLanguage,
             textToTranslate: textToTranslate
           }
         })
       }
     }
-    
+
+    const translate = () => { translateText(translationMethod, translationLanguage, originalText) }
+
     const onTextTranslated = (event) => {
       setTranslatedText(event.data.translatedText)
     }
@@ -350,20 +361,20 @@ function TranslationDialog(props) {
         },
         dialog_title: {
           cursor: 'move',
-          'background-color': theme.palette.grey.light,
+          backgroundColor: theme.palette.grey.light,
           padding: 0,
-          'padding-left': 0,
-          'padding-right': 0,
+          paddingLeft: 0,
+          paddingRight: 0,
         },
         dialog_toolbar: {
-          'background-color': theme.palette.grey.light,
-          'padding-left': '16px',
-          'padding-right': '16px',
+          backgroundColor: theme.palette.grey.light,
+          paddingLeft: '12px',
+          paddingRight: '12px',
           minHeight: '42px' 
         },
         title_text: {
-          'color': theme.palette.primary.dark,
-          fontWeight: 800
+          color: theme.palette.grey.dark,
+          fontWeight: 'bold'
         },
         translate_method_select: {
           color: theme.palette.primary.veryDark,
@@ -373,9 +384,21 @@ function TranslationDialog(props) {
           color: theme.palette.primary.veryDark,
           fontSize: "0.9rem"
         },
+        translate_language_select: {
+          marginLeft: '10px',
+          color: theme.palette.primary.veryDark,
+          fontSize: "0.9rem"
+        },
+        translate_language_select_menu_item: {
+          color: theme.palette.primary.veryDark,
+          fontSize: "0.9rem"
+        },
         textfield_original_text : {
-          minWidth: '350px',
+          minWidth: '380px',
           marginBottom: '2px',
+          "& .MuiInputLabel-outlined": {
+            color: theme.palette.grey.main
+          },
           "&:hover .MuiInputLabel-outlined": {
             color: theme.palette.grey.dark
           },
@@ -391,38 +414,31 @@ function TranslationDialog(props) {
           },
         },
         textfield_translated_text: {
-          minWidth: '350px',
+          minWidth: '380px',
           marginBottom: '2px',
-          // "&:hover .MuiInputLabel-outlined": {
-          //   color: theme.palette.grey.main
-          // },
-          // "& .MuiInputLabel-outlined.Mui-focused": {
-          //   color: theme.palette.grey.main,
-          // },
-          // "&:hover .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-          //   borderColor: theme.palette.grey.main,
-          // },
-          // "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-          //   borderColor: theme.palette.grey.main,
-          //   borderWidth: '1px'
-          // },
+          "& .MuiInputLabel-outlined.Mui-disabled": {
+            color: theme.palette.grey.main,
+          },
+          "& .MuiInputBase-root.Mui-disabled": {
+            color: theme.palette.grey.veryDark,
+          },
         },
         translate_toolbar: {
-          'padding-left': '0px',
-          'padding-right': '0px'
+          paddingLeft: '0px',
+          paddingRight: '0px'
         },
         dialog_content: {
           padding: '16px'
         },
         close_button: {
           color: theme.palette.primary.contrastText,
-          'background-color': theme.palette.primary.main,
+          backgroundColor: theme.palette.primary.main,
         },
         translate_button: {
           color: theme.palette.secondary.contrastText,
-          'background-color': theme.palette.secondary.main,
-          'padding-left': '12px',
-          'padding-right': '12px'
+          backgroundColor: theme.palette.secondary.main,
+          paddingLeft: '12px',
+          paddingRight: '12px'
         },
         grow: {
           flexGrow: 1,
@@ -434,8 +450,20 @@ function TranslationDialog(props) {
       setOpen(false)
     }
 
-    const handleOriginalTextInput = (event) => {
+    const onOriginalTextInput = (event) => {
+      console.log("New original text", event.target.value)
       setOriginalText(event.target.value)
+      if (translationRequestedAfterInput) {
+        setTranslationRequestedAfterInput(false)
+        translate()
+      }
+    }
+
+    const onOriginalTextKeyDown = (event) => {
+      if (event.keyCode == 13) {
+        console.log("Key code ENTER")
+        setTranslationRequestedAfterInput(true)
+      }
     }
 
     return ( 
@@ -461,7 +489,6 @@ function TranslationDialog(props) {
           PaperComponent={PaperComponent}
           PaperProps={{
             open: open,
-            // defaultPosition: defaultPosition
           }}
         >
           
@@ -479,10 +506,13 @@ function TranslationDialog(props) {
               imageUri={imageUri}
               originalText={originalText}
               translatedText={translatedText}
-              translateText={() => translateText(translationMethod, originalText)}
+              translate={translate}
               translationMethod={translationMethod}
-              onOriginalTextInput={handleOriginalTextInput}
+              translationLanguage={translationLanguage}
+              onOriginalTextInput={onOriginalTextInput}
+              onOriginalTextKeyDown={onOriginalTextKeyDown}
               onSelectTranslationMethod={onSelectTranslationMethod}
+              onSelectTranslationLanguage={onSelectTranslationLanguage}
               classes={classes}
             />
           </ErrorBoundary>
@@ -500,11 +530,16 @@ async function lazyInitComponent() {
   if (!dialog_component) {
     try {
       var translationMethod = await settings.getDefaultTranslationMethod()
-      console.log("translation method", translationMethod)
       if (!translationMethod) {
         translationMethod = translation.TranslationMethod.GoogleTranslateTab
       }
-      dialog_component = await ReactDOM.render(<TranslationDialog translationMethod={translationMethod}/>, document.querySelector(`#${wrapper_div_id}`));
+      console.log("translation method", translationMethod)
+      var translationLanguage = await settings.getDefaultTranslationLanguage()
+      if (!translationLanguage) {
+        translationLanguage = translation.TranslationLanguages.English.name
+      }
+      console.log("translation language", translationLanguage)
+      dialog_component = await ReactDOM.render(<TranslationDialog translationMethod={translationMethod} translationLanguage={translationLanguage}/>, document.querySelector(`#${wrapper_div_id}`));
     } catch(e) {
       console.error ("Failed to initialize popup", dialog_component, e)
     }

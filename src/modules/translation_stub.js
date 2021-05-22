@@ -7,14 +7,14 @@ var enabled = false;
 
 async function onTranslationRequested(event) {
     try {
-        console.log("translate", event)
-        if (event.data.serviceName === translation.TranslationMethod.Stub) {
+        if (event.data.translationMethod === translation.TranslationMethod.Stub) {
+            const lang = translation.TranslationLanguages[event.data.translationLanguage]
             await events.fire({
                 from: module_name,
                 type: events.EventTypes.text_translated,
                 data: {
                     textToTranslate: event.data.textToTranslate,
-                    translatedText: `translated text of ${event.data.textToTranslate}`
+                    translatedText: `translated ${event.data.textToTranslate} to ${lang.code}`
                 }
             });
         }

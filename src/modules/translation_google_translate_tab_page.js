@@ -15,11 +15,11 @@ async function onTranslationRequested(event) {
             var interval = 0;
             var maxIntervals = 50;
             while (interval < maxIntervals) {
-                await new Promise(r => setTimeout(r, 100));
+                await new Promise(r => setTimeout(r, 200));
                 var resultElements = document.querySelectorAll('c-wiz > div > div > div > span > span > span')
                 console.log('result elements', resultElements)
                 if (resultElements.length > 0) {
-                    var translatedText = resultElements[0].innerHTML
+                    var translatedText = Array.from(resultElements).slice(0, -1).map((elem) => elem.innerHTML).join('');
                     console.log('result', translatedText)
                     await events.fire({
                         from: module_name,

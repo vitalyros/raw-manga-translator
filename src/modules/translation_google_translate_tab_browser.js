@@ -34,10 +34,11 @@ async function onTranslationFinished(event) {
 
 async function onTranslationRequested(event) {
     try {
-        if (event.data.serviceName === translation.TranslationMethod.GoogleTranslateTab) {
+        if (event.data.translationMethod === translation.TranslationMethod.GoogleTranslateTab) {
             activeTab = await tabs.getActiveTab()
             console.log("active tab", activeTab)
-            var url = encodeURI(`https://translate.google.com/?sl=ja&tl=en&text=${event.data.textToTranslate}&op=translate`)
+            const lang = translation.TranslationLanguages[event.data.translationLanguage]
+            var url = encodeURI(`https://translate.google.com/?sl=ja&tl=${lang.code}&text=${event.data.textToTranslate}&op=translate`)
             if (googleTranslateTab) {
                 try {
                     googleTranslateTab = await browser.tabs.get(googleTranslateTab.id)

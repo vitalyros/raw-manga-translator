@@ -35,3 +35,13 @@ export async function setDefaultTranslationMethod(value) {
     var key = "translationMethod";
     await set(key, value)
 }
+
+export async function getDefaultTranslationLanguage() {
+    return await get("translationLanguage")
+}
+
+export async function setDefaultTranslationLanguage(value) {
+    var key = "translationLanguage";
+    await set(key, value)
+}
+
