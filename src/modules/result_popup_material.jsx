@@ -19,6 +19,10 @@ import DisplayHocrWithImage from './display_hocr_react.jsx';
 import * as translation from './translation.js';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
+import Accordion from '@material-ui/core/Accordion';
+import AccordionSummary from '@material-ui/core/AccordionSummary';
+import AccordionDetails from '@material-ui/core/AccordionDetails';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ErrorBoundary from './error_boundary.jsx';
 import * as settings from './settings.js';
 import { theme } from '../themes/default.jsx';
@@ -141,8 +145,18 @@ class PaperComponent extends React.Component {
   }
 
   render() {
+    // todo: infer these numbers from styles
+    var elevationBorderFix = 16
+    var rightBound = 420
+    var bottomBound = 46
     return (
       <Draggable 
+        // drag is bound within base position. left bound is fixed by dialog elevation border
+        bounds={{ 
+          left: -1 * this.props.basePosition.x - elevationBorderFix, 
+          top: -1 * this.props.basePosition.y, 
+          right: document.body.clientWidth - this.props.basePosition.x - rightBound - elevationBorderFix,
+          bottom: document.body.clientHeight - this.props.basePosition.y - bottomBound}}
         position={this.state.position}
         handle="#romatora-draggable-dialog-title" 
         cancel={'[class*="MuiDialogContent-root"]'}
@@ -157,80 +171,114 @@ class PaperComponent extends React.Component {
 }
 
 function TranslationTool(props) {
+  const [expanded, setExpanded] = useState(false)
+  
+  const onChangeAccordion = (event, value) => {
+    setExpanded(value)
+  }
+
   const languageMenuItems = translation.TranslationLanguageList.map((lang, i) => {
     return <MenuItem key={i} className={props.classes.translate_language_select_menu_item} value={lang.name}>{lang.name}</MenuItem>
   })
+  const translatedTextField = <TextField
+      id="romatora-translated-text"
+      // label="Translated"
+      noValidate
+      multiline
+      fullWidth
+      disabled
+      // variant="outlined"
+      InputProps={{
+        readOnly: true
+      }}
+      // rowsMin={2}
+      rowsMax={10}
+      className={props.classes.textfield_translated_text}
+      value={props.translatedText}
+      variant="outlined"
+    />
+  const recognizedTextField = <TextField
+      id="romatora-recognized-text"
+      label="Recognized text"
+      multiline
+      noValidate
+      // rowsMin={2}
+      rowsMax={10}
+      fullWidth
+      variant="outlined"
+      onKeyDown={props.onOriginalTextKeyDown}
+      onChange={props.onOriginalTextInput}
+      value={props.originalText}
+      className={props.classes.textfield_original_text}
+      variant="outlined"
+    />
+
+  const translationToolbar = <Toolbar variant="dense" className={props.classes.translate_toolbar}>
+    <Select edge="start"
+      className={props.classes.translate_method_select}
+      value={props.translationMethod}
+      onChange={props.onSelectTranslationMethod}
+    >
+      <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
+      <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
+      <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.Stub}>Stub</MenuItem>
+    </Select>
+    <Select
+      className={props.classes.translate_language_select}
+      value={props.translationLanguage}
+      onChange={props.onSelectTranslationLanguage}>
+      {languageMenuItems}
+    </Select>
+    <div style={{ flexGrow: 1 }} />
+    <Button edge="end" className={props.classes.translate_button} onClick={props.translate}>
+      Translate
+    </Button>
+  </Toolbar>
+
+  const accordionText = expanded 
+    ? <Typography variant="subtitle2">Translation options</Typography> 
+    : <Typography variant="subtitle2">Expand translation options</Typography> 
+
   return (
     <div style={{ width: 'fit-content' }}>
-  <Grid container
-    spacing={1}  
-    direction="column"
-    justify="flex-start"
-    alignItems="stretch">
-      <Grid item>
-        <ErrorBoundary>
-          <TextField
-            id="romatora-recognized-text"
-            label="Recognized"
-            multiline
-            noValidate
-            rows={5}
-            fullWidth
-            variant="outlined"
-            onKeyDown={props.onOriginalTextKeyDown}
-            onChange={props.onOriginalTextInput}
-            value={props.originalText}
-            className={props.classes.textfield_original_text}
-            variant="outlined"
-          />
-        </ErrorBoundary>
+      <Grid container
+        spacing={1}  
+        direction="column"
+        justify="flex-start"
+        alignItems="stretch">
+        <Grid item>
+          <ErrorBoundary>
+            {translatedTextField}
+          </ErrorBoundary>
+        </Grid>
+        <Grid item>
+          <ErrorBoundary>
+            <Accordion onChange={onChangeAccordion} expanded={expanded} className={props.classes.accordion}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon/>} className={props.classes.accordion_summary}>
+                {accordionText}
+              </AccordionSummary>
+              <AccordionDetails className={props.classes.accordion_details}>
+                <Grid container
+                  spacing={1}  
+                  direction="column"
+                  justify="flex-start"
+                  alignItems="stretch">
+                    <Grid item>
+                      <ErrorBoundary>
+                        {recognizedTextField}
+                      </ErrorBoundary>
+                    </Grid>
+                    <Grid item>
+                      <ErrorBoundary>
+                        {translationToolbar}
+                      </ErrorBoundary>
+                    </Grid>
+                </Grid>
+              </AccordionDetails>  
+            </Accordion>
+          </ErrorBoundary>
+        </Grid>
       </Grid>
-      <Grid item>
-        <ErrorBoundary>
-          <Toolbar variant="dense" className={props.classes.translate_toolbar}>
-            <Select edge="start"
-              className={props.classes.translate_method_select}
-              value={props.translationMethod}
-              onChange={props.onSelectTranslationMethod}
-            >
-              <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
-              <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
-              <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.Stub}>Stub</MenuItem>
-            </Select>
-            <Select
-              className={props.classes.translate_language_select}
-              value={props.translationLanguage}
-              onChange={props.onSelectTranslationLanguage}>
-              {languageMenuItems}
-            </Select>
-            <div style={{ flexGrow: 1 }} />
-            <Button edge="end" className={props.classes.translate_button} onClick={props.translate}>
-              Translate
-            </Button>
-          </Toolbar>
-        </ErrorBoundary>
-      </Grid>
-      <Grid item>
-        <ErrorBoundary>
-          <TextField
-            id="romatora-translated-text"
-            label="Translated"
-            noValidate
-            multiline
-            fullWidth
-            disabled
-            variant="outlined"
-            InputProps={{
-              readOnly: true
-            }}
-            rows={5}
-            className={props.classes.textfield_translated_text}
-            value={props.translatedText}
-            variant="outlined"
-          />
-        </ErrorBoundary>
-      </Grid>
-    </Grid>
     </div>
    );
 }
@@ -280,7 +328,7 @@ function ResultPopupContent(props) {
 
 function TranslationDialog(props) {
     const [open, setOpen] = useState(false);  
-    const [defaultPosition, setDefaultPosition] = useState({ x: 0, y: 0 })
+    const [basePosition, setBasePosition] = useState({ x: 0, y: 0 })
     const [originalText, setOriginalText] = useState("");  
     const [translatedText, setTranslatedText] = useState("");  
     const [hocr, setHocr] = useState(null);  
@@ -306,12 +354,12 @@ function TranslationDialog(props) {
     const onTextRecognized = (event) => {
       var newOriginalText = event.data.recognized_text
       var xPositionThreshold = 442;
-      var defaultY = event.data.box.y_scrolled
-      var defaultX = event.data.box.x_scrolled + event.data.box.width;
-      if (defaultX > window.screen.width - xPositionThreshold) {
-        defaultX = event.data.box.x_scrolled - xPositionThreshold
+      var baseY = event.data.box.y_scrolled
+      var baseX = event.data.box.x_scrolled + event.data.box.width;
+      if (baseX > window.screen.width - xPositionThreshold) {
+        baseX = event.data.box.x_scrolled - xPositionThreshold
       }
-      setDefaultPosition({ x: defaultX, y: defaultY})
+      setBasePosition({ x: baseX, y: baseY})
       setOpen(true)
       setImageUri(event.data.image_uri)
       setHocr(event.data.ocr_result.data.hocr)
@@ -354,10 +402,11 @@ function TranslationDialog(props) {
         },
         dialog_paper: {
           position: 'absolute',
-          left: defaultPosition.x,
-          top: defaultPosition.y,
+          left: basePosition.x,
+          top: basePosition.y,
           margin: '0 16px 0 16px',
-          border: `3px solid ${theme.palette.grey.light}`
+          border: `3px solid ${theme.palette.grey.light}`,
+          borderRadius: "5px"
         },
         dialog_title: {
           cursor: 'move',
@@ -376,9 +425,34 @@ function TranslationDialog(props) {
           color: theme.palette.grey.dark,
           fontWeight: 'bold'
         },
+
+        accordion: {
+          minHeight: '36px',
+          borderTop: `1px solid ${theme.palette.grey.light}`,
+          '& .MuiAccordionSummary-expandIcon': {
+            padding: 0
+          },
+          '& .MuiAccordionSummary-content': {
+            padding: 0,
+            margin: 0
+          },
+          '& .MuiAccordionSummary-root.Mui-expanded': {
+            minHeight: '36px' 
+          },
+        },
+        accordion_summary: {
+          minHeight: '36px',
+          '& .MuiAccordionSummary-expandIcon': {
+            padding: 0
+          }
+        },
+        accordion_details: {
+          padding: "8px 16px 8px 16px"
+        },
         translate_method_select: {
           color: theme.palette.primary.veryDark,
-          fontSize: "0.9rem"
+          fontSize: "0.9rem",
+          width: "170px"
         },
         translate_method_select_menu_item: {
           color: theme.palette.primary.veryDark,
@@ -387,7 +461,8 @@ function TranslationDialog(props) {
         translate_language_select: {
           marginLeft: '10px',
           color: theme.palette.primary.veryDark,
-          fontSize: "0.9rem"
+          fontSize: "0.9rem",
+          width: "80px"
         },
         translate_language_select_menu_item: {
           color: theme.palette.primary.veryDark,
@@ -395,8 +470,15 @@ function TranslationDialog(props) {
         },
         textfield_original_text : {
           minWidth: '380px',
-          marginBottom: '2px',
-          "& .MuiInputLabel-outlined": {
+          marginBottom: '3px',
+          // "& .MuiInputBase-root": {
+          //   padding: "20px"
+          // },
+          "& .MuiInputBase-input": {
+            fontSize: "1rem",
+            color: theme.palette.grey.veryDark
+          },
+          "& .MuiOutlinedInput-root": {
             color: theme.palette.grey.main
           },
           "&:hover .MuiInputLabel-outlined": {
@@ -413,9 +495,20 @@ function TranslationDialog(props) {
             borderWidth: '1px'
           },
         },
+
         textfield_translated_text: {
-          minWidth: '380px',
+          minWidth: '400px',
           marginBottom: '2px',
+          "& .MuiOutlinedInput-multiline": {
+            fontSize: "1.5rem",
+            padding: "16px 16px 8px 16px"
+          },
+          "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+            border: "1px"
+          },
+          // "& .MuiOutlinedInput-multiline": {
+          //   margin
+          // },
           "& .MuiInputLabel-outlined.Mui-disabled": {
             color: theme.palette.grey.main,
           },
@@ -424,11 +517,11 @@ function TranslationDialog(props) {
           },
         },
         translate_toolbar: {
-          paddingLeft: '0px',
-          paddingRight: '0px'
+          paddingLeft: 0,
+          paddingRight: 0
         },
         dialog_content: {
-          padding: '16px'
+          padding: 0
         },
         close_button: {
           color: theme.palette.primary.contrastText,
@@ -489,6 +582,7 @@ function TranslationDialog(props) {
           PaperComponent={PaperComponent}
           PaperProps={{
             open: open,
+            basePosition: basePosition
           }}
         >
           
