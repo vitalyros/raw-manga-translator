@@ -17,7 +17,18 @@ async function startTessaract() {
             workerPath: browser.extension.getURL("./node_modules/tesseract.js/dist/worker.min.js"),
             langPath: browser.extension.getURL("./lang"),
             corePath: browser.extension.getURL("./node_modules/tesseract.js-core/tesseract-core.wasm.js"),
-            logger: m => console.log("tesseract message", m)
+            logger: e => {
+                if (e.status == 'recognizing text') {
+                    events.fire({
+                        type: events.EventTypes.RecognitionProgress,
+                        from: module_name,
+                        data: {
+                            progress: e.progress
+                        }
+                    });
+                }
+                console.log("tesseract message", m)
+            }
         });
         await startingWorker.load();
 
@@ -37,24 +48,51 @@ async function startTessaract() {
     }
 }
 
-async function onImageCaptured(message) {
+async function onImageCaptured(event) {
     if (enabled) {
         await waitForTesseract()
         try {
-            var ocr_result = await worker.recognize(message.data.image_uri);
+            var startDate = new Date();
+            var startMetrics = { 
+                startDate: startDate, 
+                startTime: startDate.getTime() 
+            }
+            events.fire({
+                type: events.EventTypes.RecognitionStart,
+                from: module_name,
+                data: {
+                    box: event.data.box,
+                    recognitionMetrics: startMetrics,
+                }
+            });
+            var ocr_result = await worker.recognize(event.data.image_uri);
             var post_processed_text = ocr_result.data.text.replace(/[\n\r]/g,' '.replace(' ', ''));
+            var endDate = new Date();
+            var endMetrics = { 
+                startDate: startMetrics.startDate, 
+                startTime: startMetrics.startTime,
+                endDate: endDate,
+                endTime: endDate.getTime(),
+                duration: startDate.getTime() - endDate.getTime()
+            }
+            events.fire({
+                type: events.EventTypes.RecognitionSuccess,
+                from: module_name,
+                data: {
+                    box: event.data.box,
+                    image_uri: event.data.image_uri,
+                    ocr_result: ocr_result,
+                    recognized_text: post_processed_text,
+                    recognitionMetrics: endMetrics,
+                }
+            });
+        } catch (e) {
+            logError("recongintion failed", event, e)
             events.fire({
                 from: module_name,
-                type: events.EventTypes.text_recognized, 
-                data: {
-                    box: message.data.box,
-                    image_uri: message.data.image_uri,
-                    ocr_result: ocr_result,
-                    recognized_text: post_processed_text
-                }
+                type: events.EventTypes.RecognitionFailure, 
+                data: {}
             })
-        } catch (e) {
-            logError("recongintion failed", message, e)
         }
     } 
 }

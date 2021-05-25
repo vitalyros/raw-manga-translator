@@ -21,6 +21,8 @@
         var image_capture = require('./modules/image_capture_screenshot.js')
         await image_capture.enable()
 
+        
+
         // var page_capture = require('./modules/page_capture_screenshot.js')
         // await page_capture.enable()
     } catch (e) {

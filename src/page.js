@@ -12,6 +12,9 @@
         // var page_recongition = require('./modules/page_recognition_tesseract.js');
         // await page_recongition.enable()
 
+        var recognition_progress = require('./modules/recognition_progress_material.jsx');
+        await recognition_progress.enable()
+
         var result_popup = require('./modules/result_popup_material.jsx');
         await result_popup.enable()
 

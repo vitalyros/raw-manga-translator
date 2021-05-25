@@ -7,6 +7,8 @@ var themeBuilder = createMuiTheme({
       primary: {
         light: lightGreen[200],
         main: lightGreen[300],
+        dark: lightGreen[500],
+        veryDark: lightGreen[700],
         contrastText: grey[800]
       },
       secondary: {

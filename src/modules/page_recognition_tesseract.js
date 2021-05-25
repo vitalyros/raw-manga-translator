@@ -50,17 +50,6 @@ async function onPageImageCaptured(message) {
             console.log("recognition ended at", date1)
             console.log(`recognition lasted ${dateDiff}`, dateDiff)
             console.log("page image ocr", ocr_result);
-            // var post_processed_text = ocr_result.data.text.replace(/[\n\r]/g,' '.replace(' ', ''));
-            // events.fire({
-            //     from: module_name,
-            //     type: events.EventTypes.text_recognized, 
-            //     data: {
-            //         box: message.data.box,
-            //         image_uri: message.data.image_uri,
-            //         ocr_result: ocr_result,
-            //         recognized_text: post_processed_text
-            //     }
-            // })
         } catch (e) {
             logError("recongintion failed", message, e)
         }

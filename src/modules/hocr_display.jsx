@@ -76,7 +76,7 @@ export async function onTextRecognized(event) {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onTextRecognized, events.EventTypes.text_recognized)
+        events.addListener(onTextRecognized, events.EventTypes.RecognitionSuccess)
         enabled = true
     }
 }
@@ -86,7 +86,7 @@ export async function disable() {
         if (popup_wrapper_div != null) {
             document.body.removeChild(popup_wrapper_div)
         }
-        events.removeListener(onTextRecognized, events.EventTypes.text_recognized)
+        events.removeListener(onTextRecognized, events.EventTypes.RecognitionSuccess)
         enabled = false
     }
 }

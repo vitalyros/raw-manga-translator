@@ -133,11 +133,11 @@ class PaperComponent extends React.Component {
   }
 
   componentDidMount() {
-    events.addListener(this.onTextRecognizedWrapped, events.EventTypes.text_recognized)
+    events.addListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
   }
 
   componentWillUnmount() {
-    events.removeListener(this.onTextRecognizedWrapped, events.EventTypes.text_recognized)
+    events.removeListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
   }
 
   componentDidUpdate() {
@@ -389,16 +389,16 @@ function TranslationDialog(props) {
     
     useEffect(() => {
       events.addListener(onTextTranslated, events.EventTypes.text_translated)
-      events.addListener(onTextRecognized, events.EventTypes.text_recognized)
+      events.addListener(onTextRecognized, events.EventTypes.RecognitionSuccess)
       return () => {
-        events.removeListener(onTextRecognized, events.EventTypes.text_recognized)
+        events.removeListener(onTextRecognized, events.EventTypes.RecognitionSuccess)
         events.removeListener(onTextTranslated, events.EventTypes.text_translated)
       }
-    });
+    }, []);
 
     const classes = makeStyles({
         dialog: {
-          position: 'absolute',
+          position: 'absolute'
         },
         dialog_paper: {
           position: 'absolute',
@@ -406,7 +406,8 @@ function TranslationDialog(props) {
           top: basePosition.y,
           margin: '0 16px 0 16px',
           border: `3px solid ${theme.palette.grey.light}`,
-          borderRadius: "5px"
+          borderRadius: "5px",
+          backgroundColor: theme.palette.grey.light
         },
         dialog_title: {
           cursor: 'move',
@@ -450,22 +451,22 @@ function TranslationDialog(props) {
           padding: "8px 16px 8px 16px"
         },
         translate_method_select: {
-          color: theme.palette.primary.veryDark,
+          color: theme.palette.grey.veryDark,
           fontSize: "0.9rem",
           width: "170px"
         },
         translate_method_select_menu_item: {
-          color: theme.palette.primary.veryDark,
+          color: theme.palette.grey.veryDark,
           fontSize: "0.9rem"
         },
         translate_language_select: {
           marginLeft: '10px',
-          color: theme.palette.primary.veryDark,
+          color: theme.palette.grey.veryDark,
           fontSize: "0.9rem",
           width: "80px"
         },
         translate_language_select_menu_item: {
-          color: theme.palette.primary.veryDark,
+          color: theme.palette.grey.veryDark,
           fontSize: "0.9rem"
         },
         textfield_original_text : {
@@ -521,7 +522,10 @@ function TranslationDialog(props) {
           paddingRight: 0
         },
         dialog_content: {
-          padding: 0
+          padding: 0,
+          borderTop: `3px solid white`,
+          borderRadius: "5px",
+          backgroundColor: 'white'
         },
         close_button: {
           color: theme.palette.primary.contrastText,

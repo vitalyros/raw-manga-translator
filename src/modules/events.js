@@ -18,13 +18,18 @@ export const EventTypes = {
     
     PageInitialized: 'PageInitialized',
 
+    RecognitionStart: 'RecognitionStart',
+    RecognitionProgress: 'RecognitiionProgress',
+    RecognitionSuccess: 'RecognitionSuccess',
+    RecognitionFailure: 'RecognitionFailure',
+    
     module_area_selection_enabled: 'module_area_selection_enabled',
 
     start_select_area: 'start_select_area',
     cancel_select_area: 'cancel_select_area',
     area_selected: 'area_selected',
     image_captured: 'image_captured',
-    text_recognized: 'text_recognized',
+
     text_translated: 'text_translated',
     translation_requested: 'translation_requested',
     pipeline_failed: 'pipeline_failed'
@@ -67,7 +72,6 @@ async function onEvent(event) {
     if (enabled) {
         var nick = event.nick;
         if (typeof nick !== 'undefined' && nick === plugin_nickname) {
-
             listeners_for_all.forEach(async listener => {
                 try {
                     await listener(event)
@@ -93,6 +97,7 @@ async function onEvent(event) {
 }  
 
 export function addListener(listener, event_type) {
+    console.log("ADD LISTENER", listener, event_type)
     if (typeof event_type !== 'undefined') {
         var type_listeners = listeners_by_type[event_type];
         if (typeof type_listeners === 'undefined') {
