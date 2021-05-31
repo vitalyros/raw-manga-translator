@@ -6,8 +6,8 @@
         var message_logger = require('./modules/message_logger.js');
         await message_logger.enable();
 
-        // var recognition = require('./modules/recognition_tesseract.js');
-        var recognition = require('./modules/recognition_stub.js');
+        var recognition = require('./modules/recognition_tesseract.js');
+        // var recognition = require('./modules/recognition_stub.js');
         await recognition.enable()
 
         // var page_recongition = require('./modules/page_recognition_tesseract.js');
