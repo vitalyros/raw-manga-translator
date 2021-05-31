@@ -20,7 +20,7 @@ async function onTranslationFinished(event) {
         if (event.data.translatedText) {
             await events.fire({
                 from: module_name,
-                type: events.EventTypes.text_translated,
+                type: events.EventTypes.TranslationSuccess,
                 data: {
                     textToTranslate: event.data.textToTranslate,
                     translatedText: event.data.translatedText
@@ -28,7 +28,13 @@ async function onTranslationFinished(event) {
              });
         }
     } catch (e) {
-        console.error("Failed onTranslationFinished", event, e)
+        events.fire({
+            from: module_name,
+            type: events.EventTypes.TranslationFailure,
+            data: {
+                exception: e
+            }
+        });
     }
 } 
 
@@ -55,7 +61,13 @@ async function onTranslationRequested(event) {
             }
         }
     } catch (e) {
-        console.error("Failed onTranslationRequested", event, e)
+        events.fire({
+            from: module_name,
+            type: events.EventTypes.TranslationFailure,
+            data: {
+                exception: e
+            }
+        });
     }
 }
 
@@ -74,7 +86,7 @@ async function onTranslationEnabled(event) {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onTranslationRequested, events.EventTypes.translation_requested)
+        events.addListener(onTranslationRequested, events.EventTypes.TranslationRequested)
         events.addListener(onTranslationFinished, events.EventTypes.GoogleTranslateTabTranslationFinished)
         events.addListener(onTranslationEnabled, events.EventTypes.GoogleTranslateTabTranslationEnabled)
         enabled = true
@@ -83,7 +95,7 @@ export async function enable() {
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onTranslationRequested, events.EventTypes.translation_requested)
+        events.removeListener(onTranslationRequested, events.EventTypes.TranslationRequested)
         events.removeListener(onTranslationFinished, events.EventTypes.GoogleTranslateTabTranslationFinished)
         events.removeListener(onTranslationEnabled, events.EventTypes.GoogleTranslateTabTranslationEnabled)
         enabled = false

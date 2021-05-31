@@ -13,7 +13,7 @@ async function onTranslationRequested(event) {
             var res = await translate_api.translate(event.data.textToTranslate, { from: "ja", to: lang.code })
             await events.fire({
                 from: module_name,
-                type: events.EventTypes.text_translated,
+                type: events.EventTypes.TranslationSuccess,
                 data: {
                     textToTranslate: event.data.textToTranslate,
                     translatedText: res.text
@@ -21,20 +21,26 @@ async function onTranslationRequested(event) {
             });
         }
     } catch (e) {
-        console.error("Failed onTranslationRequested", event, e)
+        events.fire({
+            from: module_name,
+            type: events.EventTypes.TranslationFailure,
+            data: {
+                exception: e
+            }
+        });
     }
 }
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onTranslationRequested, events.EventTypes.translation_requested)
+        events.addListener(onTranslationRequested, events.EventTypes.TranslationRequested)
         enabled = true
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onTranslationRequested, events.EventTypes.translation_requested)
+        events.removeListener(onTranslationRequested, events.EventTypes.TranslationRequested)
         enabled = false
     }
 }

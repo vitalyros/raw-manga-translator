@@ -45,7 +45,13 @@ async function onTranslationRequested(event) {
             console.log("current page is not a google translate page")
         }
     } catch (e) {
-        console.error("Failed onTranslationRequested", event, e)
+        events.fire({
+            from: module_name,
+            type: events.EventTypes.TranslationFailure,
+            data: {
+                exception: e
+            }
+        });
     }
 }
 

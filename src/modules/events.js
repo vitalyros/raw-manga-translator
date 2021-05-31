@@ -22,6 +22,8 @@ export const EventTypes = {
     RecognitionProgress: 'RecognitiionProgress',
     RecognitionSuccess: 'RecognitionSuccess',
     RecognitionFailure: 'RecognitionFailure',
+
+    TabZoomChanged: 'TabZoomChanged',
     
     module_area_selection_enabled: 'module_area_selection_enabled',
 
@@ -30,8 +32,10 @@ export const EventTypes = {
     area_selected: 'area_selected',
     image_captured: 'image_captured',
 
-    text_translated: 'text_translated',
-    translation_requested: 'translation_requested',
+    TranslationRequested: 'TranslationRequested',
+    TranslationSuccess: 'TranslationSuccess',
+    TranslationFailure: 'TranslationFailure',
+
     pipeline_failed: 'pipeline_failed'
 }
 

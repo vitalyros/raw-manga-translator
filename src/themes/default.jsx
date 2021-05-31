@@ -19,10 +19,10 @@ var themeBuilder = createMuiTheme({
         main: red[500],
       },
       warning: {
-        main: amber[500],
+        main: amber[700],
       },
       success: {
-        main: orange[500],
+        main: lightGreen[500],
       },
       grey: {
         light: grey[300],

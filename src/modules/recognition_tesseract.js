@@ -66,7 +66,7 @@ async function onImageCaptured(event) {
                 }
             });
             var ocr_result = await worker.recognize(event.data.image_uri);
-            var post_processed_text = ocr_result.data.text.replace(/[\n\r]/g,' '.replace(' ', ''));
+            var post_processed_text = ocr_result.data.text.replace(/[\n\r]/g,'').replace(/\s+/g,'');
             var endDate = new Date();
             var endMetrics = { 
                 startDate: startMetrics.startDate, 
@@ -87,11 +87,13 @@ async function onImageCaptured(event) {
                 }
             });
         } catch (e) {
-            logError("recongintion failed", event, e)
             events.fire({
                 from: module_name,
                 type: events.EventTypes.RecognitionFailure, 
-                data: {}
+                data: {
+                    box: event.data.box,
+                    image_uri: event.data.image_uri,
+                }
             })
         }
     } 

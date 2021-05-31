@@ -26,7 +26,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ErrorBoundary from './error_boundary.jsx';
 import * as settings from './settings.js';
 import { theme } from '../themes/default.jsx';
-import _ from "lodash";
+import _, { get } from "lodash";
 
 const module_name = 'result_popup';
 
@@ -35,15 +35,31 @@ const wrapper_div_id = "romatora-translation-popup-wrapper"
 var wrapper_div = null;
 var dialog_component = null;
 
+const SCALING_FACTOR = 2
+
+function getCurrentZoom() {
+  return window.devicePixelRatio
+}
+
+function repositionBasedOnZoomChange(position, oldZoom, newZoom) {
+  const zoomRatio = oldZoom / SCALING_FACTOR
+    return { 
+    x: position.x * zoomRatio,
+    y: position.y * zoomRatio
+  }
+}
+
 class PaperComponent extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
+      // windowProps: {width: document.body.clientWidth, height: document.body.clientHeight},
       position: {x: 0, y: 0},
       lastReportedExclusionAreaEventData: null
     }
     this.exclusionAreaName="result_popup_paper"
     this.onTextRecognizedWrapped = (e) => this.onTextRecognized(e)
+    this.onResizedWrapped = (e) => this.onResized(e)
   }
   
   onDragStart(event, data) {
@@ -85,6 +101,12 @@ class PaperComponent extends React.Component {
         y: 0}
     })
     this.fireExclusionZoneUpdate()
+  }
+
+  onResized(event) {
+    // this.setState({
+    //   windowProps: {width: document.body.clientWidth, height: document.body.clientHeight}
+    // })
   }
 
   fireExclusionZoneUpdate() {
@@ -134,10 +156,12 @@ class PaperComponent extends React.Component {
 
   componentDidMount() {
     events.addListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
+    // window.addEventListener('resize', this.onResizedWrapped)
   }
 
   componentWillUnmount() {
     events.removeListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
+    // window.removeEventListener('resize', this.onResizedWrapped)
   }
 
   componentDidUpdate() {
@@ -145,27 +169,35 @@ class PaperComponent extends React.Component {
   }
 
   render() {
+    // var position = repositionBasedOnZoomChange(this.state.position, this.props.baseZoom, this.props.zoom)
+    var scale = SCALING_FACTOR / this.props.zoom
     // todo: infer these numbers from styles
     var elevationBorderFix = 16
     var rightBound = 420
     var bottomBound = 46
     return (
+      <div style={{transformOrigin: "left top", transform: `scale(${scale})`}}>
       <Draggable 
         // drag is bound within base position. left bound is fixed by dialog elevation border
         bounds={{ 
           left: -1 * this.props.basePosition.x - elevationBorderFix, 
           top: -1 * this.props.basePosition.y, 
-          right: document.body.clientWidth - this.props.basePosition.x - rightBound - elevationBorderFix,
-          bottom: document.body.clientHeight - this.props.basePosition.y - bottomBound}}
+          // right: this.state.windowProps.width - this.props.basePosition.x - rightBound - elevationBorderFix,
+          // bottom: this.state.windowProps.height - this.props.basePosition.y - bottomBound
+        }}
         position={this.state.position}
+        scale={scale}
         handle="#romatora-draggable-dialog-title" 
         cancel={'[class*="MuiDialogContent-root"]'}
         onStart={(e, d) => this.onDragStart(e, d)}
         onDrag={(e, d) => this.onDrag(e, d)}
         onStop={(e, d) => this.onDragStop(e, d)}
         >
-        <Paper {...this.props} />
+          {/* <div style={{transform: `scale(${scale})`}}> */}
+            <Paper {...this.props} />
+          {/* </div> */}
       </Draggable>
+      </div>
     );
   }
 }
@@ -180,21 +212,24 @@ function TranslationTool(props) {
   const languageMenuItems = translation.TranslationLanguageList.map((lang, i) => {
     return <MenuItem key={i} className={props.classes.translate_language_select_menu_item} value={lang.name}>{lang.name}</MenuItem>
   })
-  const translatedTextField = <TextField
+  var resultTextClass = props.classes.textfield_result_text_translated
+  if (props.errorFlags.error) {
+    resultTextClass = props.classes.textfield_result_text_error
+  } else if (props.errorFlags.warn) {
+    resultTextClass = props.classes.textfield_result_text_warn
+  }
+  const resultTextField = <TextField
       id="romatora-translated-text"
-      // label="Translated"
       noValidate
       multiline
       fullWidth
       disabled
-      // variant="outlined"
       InputProps={{
         readOnly: true
       }}
-      // rowsMin={2}
       rowsMax={10}
-      className={props.classes.textfield_translated_text}
-      value={props.translatedText}
+      className={`${props.classes.textfield_result_text} ${resultTextClass}`}
+      value={props.resultText}
       variant="outlined"
     />
   const recognizedTextField = <TextField
@@ -202,7 +237,6 @@ function TranslationTool(props) {
       label="Recognized text"
       multiline
       noValidate
-      // rowsMin={2}
       rowsMax={10}
       fullWidth
       variant="outlined"
@@ -248,7 +282,7 @@ function TranslationTool(props) {
         alignItems="stretch">
         <Grid item>
           <ErrorBoundary>
-            {translatedTextField}
+            {resultTextField}
           </ErrorBoundary>
         </Grid>
         <Grid item>
@@ -313,8 +347,9 @@ function ResultPopupContent(props) {
         <TranslationTool 
           classes={props.classes}
           originalText={props.originalText} 
-          translatedText={props.translatedText}
+          resultText={props.resultText}
           translate={props.translate}
+          errorFlags={props.errorFlags}
           translationMethod={props.translationMethod}
           translationLanguage={props.translationLanguage}
           onOriginalTextInput={props.onOriginalTextInput}
@@ -327,15 +362,31 @@ function ResultPopupContent(props) {
 }
 
 function TranslationDialog(props) {
+    try {
+    const [zoom, setZoom] = useState(getCurrentZoom());
     const [open, setOpen] = useState(false);  
+    const [baseZoom, setBaseZoom] = useState(getCurrentZoom());
     const [basePosition, setBasePosition] = useState({ x: 0, y: 0 })
     const [originalText, setOriginalText] = useState("");  
-    const [translatedText, setTranslatedText] = useState("");  
+    const [resultText, setResultText] = useState("");  
+    const [errorFlags, setErrorFlags] = useState({error: false, warn: false})
     const [hocr, setHocr] = useState(null);  
     const [imageUri, setImageUri] = useState(null);  
     const [translationMethod, setTranslationMethod] = useState(props.translationMethod);  
     const [translationLanguage, setTranslationLanguage] = useState(props.translationLanguage)
     const [translationRequestedAfterInput, setTranslationRequestedAfterInput] = useState(false)
+
+    const setWarn = () => {
+      setErrorFlags({error: false, warn: true})
+    }
+
+    const setError = () => {
+      setErrorFlags({error: true, warn: false})
+    }
+
+    const clearWarnAndError = () => {
+      setErrorFlags({error: false, warn: false})
+    }
 
     const onSelectTranslationMethod = (event) => {
       var newTranslationMethod = event.target.value
@@ -351,8 +402,7 @@ function TranslationDialog(props) {
       setTranslationLanguage(newTranslationLanguage)
     }
 
-    const onTextRecognized = (event) => {
-      var newOriginalText = event.data.recognized_text
+    const openWindowOnRecongitionEvent = (event) => {
       var xPositionThreshold = 442;
       var baseY = event.data.box.y_scrolled
       var baseX = event.data.box.x_scrolled + event.data.box.width;
@@ -360,17 +410,40 @@ function TranslationDialog(props) {
         baseX = event.data.box.x_scrolled - xPositionThreshold
       }
       setBasePosition({ x: baseX, y: baseY})
+      setBaseZoom(getCurrentZoom())
       setOpen(true)
+    }
+
+    const onRecognitionFailure = (event) => {
+      openWindowOnRecongitionEvent(event)
+      setError(true)
+      setOriginalText("")
+      setResultText("Recognition failed. Try reloading the page")
+    }
+
+
+    const onRecognitionSuccess = (event) => {
+      openWindowOnRecongitionEvent(event)
+      var newOriginalText = event.data.recognized_text
+
       setImageUri(event.data.image_uri)
       setHocr(event.data.ocr_result.data.hocr)
-      setOriginalText(newOriginalText)
-      translateText(translationMethod, translationLanguage, newOriginalText)
+      if (newOriginalText === "") {
+        setWarn(true)
+        setResultText("No text recognized")
+        setOriginalText("")
+      } else {
+        clearWarnAndError()
+        setResultText("")
+        setOriginalText(newOriginalText)
+        translateText(translationMethod, translationLanguage, newOriginalText)
+      }
     }
 
     const translateText = (translationMethod, translationLanguage, textToTranslate) => {
       if (textToTranslate && translationMethod && translationLanguage) {
         events.fire({
-          type: events.EventTypes.translation_requested,
+          type: events.EventTypes.TranslationRequested,
           from: module_name,
           data: {
             translationMethod: translationMethod,
@@ -383,27 +456,52 @@ function TranslationDialog(props) {
 
     const translate = () => { translateText(translationMethod, translationLanguage, originalText) }
 
-    const onTextTranslated = (event) => {
-      setTranslatedText(event.data.translatedText)
+    const onTranslationSuccess = (event) => {
+      clearWarnAndError()
+      setResultText(event.data.translatedText)
     }
+
+    const onTranslationFailure = (event) => {
+      setError(true)
+      setResultText("Translation Failed. Try another translation method by selecting it down below.")
+    }
+
+    const onZoomChanged = (event) => {
+      setZoom(getCurrentZoom())
+    }
+
+    const onTabZoomChanged = (event) => {
+      // console.log (`${(window.outerWidth - 10 ) / window.innerWidth}`)
+      // setZoom(event.data.newZoomFactor)
+    }
+
+    const adjustedPosition = repositionBasedOnZoomChange(basePosition, baseZoom, zoom)
     
     useEffect(() => {
-      events.addListener(onTextTranslated, events.EventTypes.text_translated)
-      events.addListener(onTextRecognized, events.EventTypes.RecognitionSuccess)
+      events.addListener(onTranslationFailure, events.EventTypes.TranslationFailure)
+      events.addListener(onTranslationSuccess, events.EventTypes.TranslationSuccess)
+      events.addListener(onRecognitionFailure, events.EventTypes.RecognitionFailure)
+      events.addListener(onRecognitionSuccess, events.EventTypes.RecognitionSuccess)
+      events.addListener(onTabZoomChanged, events.EventTypes.TabZoomChanged)
+      window.addEventListener('resize', onZoomChanged)
       return () => {
-        events.removeListener(onTextRecognized, events.EventTypes.RecognitionSuccess)
-        events.removeListener(onTextTranslated, events.EventTypes.text_translated)
+        events.removeListener(onTranslationFailure, events.EventTypes.TranslationFailure)
+        events.removeListener(onTranslationSuccess, events.EventTypes.TranslationSuccess)
+        events.removeListener(onRecognitionFailure, events.EventTypes.RecognitionFailure)
+        events.removeListener(onRecognitionSuccess, events.EventTypes.RecognitionSuccess)
+        events.removeListener(onTabZoomChanged, events.EventTypes.TabZoomChanged)
+        window.removeEventListener('resize', onZoomChanged)
       }
     }, []);
 
     const classes = makeStyles({
         dialog: {
-          position: 'absolute'
+          position: 'absolute',
         },
         dialog_paper: {
           position: 'absolute',
-          left: basePosition.x,
-          top: basePosition.y,
+          left: adjustedPosition.x,
+          top: adjustedPosition.y,
           margin: '0 16px 0 16px',
           border: `3px solid ${theme.palette.grey.light}`,
           borderRadius: "5px",
@@ -472,9 +570,6 @@ function TranslationDialog(props) {
         textfield_original_text : {
           minWidth: '380px',
           marginBottom: '3px',
-          // "& .MuiInputBase-root": {
-          //   padding: "20px"
-          // },
           "& .MuiInputBase-input": {
             fontSize: "1rem",
             color: theme.palette.grey.veryDark
@@ -496,8 +591,7 @@ function TranslationDialog(props) {
             borderWidth: '1px'
           },
         },
-
-        textfield_translated_text: {
+        textfield_result_text: {
           minWidth: '400px',
           marginBottom: '2px',
           "& .MuiOutlinedInput-multiline": {
@@ -507,15 +601,24 @@ function TranslationDialog(props) {
           "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
             border: "1px"
           },
-          // "& .MuiOutlinedInput-multiline": {
-          //   margin
-          // },
           "& .MuiInputLabel-outlined.Mui-disabled": {
             color: theme.palette.grey.main,
           },
+        },
+        textfield_result_text_translated: {
           "& .MuiInputBase-root.Mui-disabled": {
             color: theme.palette.grey.veryDark,
-          },
+          }      
+        },
+        textfield_result_text_warn: {
+          "& .MuiInputBase-root.Mui-disabled": {
+            color: theme.palette.warning.main,
+          }      
+        },
+        textfield_result_text_error: {
+          "& .MuiInputBase-root.Mui-disabled": {
+            color: theme.palette.error.main,
+          }      
         },
         translate_toolbar: {
           paddingLeft: 0,
@@ -564,59 +667,70 @@ function TranslationDialog(props) {
     }
 
     return ( 
-      <ThemeProvider theme={theme}>
-        <Dialog 
-          classes={{
-            root: classes.dialog,
-            paper: classes.dialog_paper
-          }}
-          style = {{ position: "absolute"}}
-          position="absolute"
-          color="inherit"
-          disableBackdropClick
-          disableEnforceFocus
-          hideBackdrop
-          open={open}
-          fullWidth={false}
-          scroll='body'
-          maxWidth='xl'
-          onClose={handleClose}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-          PaperComponent={PaperComponent}
-          PaperProps={{
-            open: open,
-            basePosition: basePosition
-          }}
-        >
-          
-          <ErrorBoundary>
-            <ResultPopupTitle 
-              open={open}
-              theme={theme}
-              classes={classes}
-              handleClose={handleClose}/>
-          </ErrorBoundary>
-          <ErrorBoundary>
-            <ResultPopupContent
-              open={open} 
-              hocr={hocr} 
-              imageUri={imageUri}
-              originalText={originalText}
-              translatedText={translatedText}
-              translate={translate}
-              translationMethod={translationMethod}
-              translationLanguage={translationLanguage}
-              onOriginalTextInput={onOriginalTextInput}
-              onOriginalTextKeyDown={onOriginalTextKeyDown}
-              onSelectTranslationMethod={onSelectTranslationMethod}
-              onSelectTranslationLanguage={onSelectTranslationLanguage}
-              classes={classes}
-            />
-          </ErrorBoundary>
-        </Dialog>
-      </ThemeProvider>
+      <ErrorBoundary>
+        <ThemeProvider theme={theme}>
+
+          <Dialog 
+            classes={{
+              root: classes.dialog,
+              paper: classes.dialog_paper
+            }}
+            style = {{ position: "absolute"}}
+            // position="abso
+            color="inherit"
+            disableBackdropClick
+            disableEnforceFocus
+            hideBackdrop
+            open={open}
+            fullWidth={false}
+            scroll='body'
+            maxWidth='xl'
+            onClose={handleClose}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+            PaperComponent={PaperComponent}
+            PaperProps={{
+              open: open,
+              basePosition: adjustedPosition,
+              baseZoom: baseZoom,
+              zoom: zoom
+            }}
+          >
+            {/* <div style={{transformOrigin: "top left", transform: `scale(${1 / zoom})`}}> */}
+            <ErrorBoundary>
+              <ResultPopupTitle 
+                open={open}
+                theme={theme}
+                classes={classes}
+                handleClose={handleClose}/>
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <ResultPopupContent
+                open={open} 
+                hocr={hocr} 
+                errorFlags={errorFlags}
+                imageUri={imageUri}
+                originalText={originalText}
+                resultText={resultText}
+                translate={translate}
+                translationMethod={translationMethod}
+                translationLanguage={translationLanguage}
+                onOriginalTextInput={onOriginalTextInput}
+                onOriginalTextKeyDown={onOriginalTextKeyDown}
+                onSelectTranslationMethod={onSelectTranslationMethod}
+                onSelectTranslationLanguage={onSelectTranslationLanguage}
+                classes={classes}
+              />
+            </ErrorBoundary>
+            {/* </div> */}
+          </Dialog>
+        </ThemeProvider>
+      </ErrorBoundary>
     );
+  } catch(e) {
+    console.log("ERROR", e)
+    return <div/>
+  }
 }
 
 async function lazyInitComponent() {

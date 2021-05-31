@@ -21,6 +21,8 @@
         var image_capture = require('./modules/image_capture_screenshot.js')
         await image_capture.enable()
 
+        var tab_scaling = require('./modules/tab_scaling.js')
+        await tab_scaling.enable()
         
 
         // var page_capture = require('./modules/page_capture_screenshot.js')

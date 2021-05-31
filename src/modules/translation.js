@@ -1,5 +1,3 @@
-import { ContactsOutlined } from "@material-ui/icons";
-
 export const TranslationMethod = {
     Stub: "Stub",
     GoogleTranslateApi: "GoogleTranslateApi",

@@ -18,9 +18,26 @@ var enabled = false;
 const wrapper_div_id = "romatora-translation-progress-wrapper"
 var wrapper_div = null;
 var dialog_component = null;
+
+const SCALING_FACTOR = 2
+
+function getCurrentZoom() {
+  return window.devicePixelRatio
+}
+
+function repositionBasedOnZoomChange(position, oldZoom, newZoom) {
+  const zoomRatio = oldZoom / newZoom 
+  return { 
+    x: position.x * zoomRatio,
+    y: position.y * zoomRatio
+  }
+}
+
 function RecognitionProgress(props) {
   useTheme(theme)
   const interrupted = useRef(false)
+  const [zoom, setZoom] = useState(getCurrentZoom())
+  const [baseZoom, setBaseZoom] = useState(getCurrentZoom())
   const [position, setPosition] = useState({x: 0, y: 0})
   const [shown, setShown] = useState(false)
   const [progress, setProgress] = useState(0.0)
@@ -35,6 +52,7 @@ function RecognitionProgress(props) {
     if (baseY > document.body.clientHeight - positionThreshold) {
       baseY = document.body.clientHeight - positionThreshold
     }
+    setBaseZoom(getCurrentZoom())
     setPosition({ x: baseX, y: baseY})
     setProgress(0)
     // Showing is slightly delayed.
@@ -43,37 +61,41 @@ function RecognitionProgress(props) {
     if (!interrupted.current) {
       setShown(true)
     }
-    console.log("SHOWN")
   }
   const onRecognitionProgress = (event) => {
     setProgress(event.data.progress)
-    console.log("PROGRESS")
   }
   const onRecognitionFinished = (event) => {
     interrupted.current = true
     setShown(false)
     setProgress(0)
-    console.log("HIDDEN")
+  }
+  const onZoomChanged = (event) => {
+    setZoom(getCurrentZoom())
   }
   useEffect(() => {
     events.addListener(onRecognitionStart, events.EventTypes.RecognitionStart)
     events.addListener(onRecognitionProgress, events.EventTypes.RecognitionProgress)
     events.addListener(onRecognitionFinished, events.EventTypes.RecognitionFailure)
     events.addListener(onRecognitionFinished, events.EventTypes.RecognitionSuccess)
+    window.addEventListener('resize', onZoomChanged)
     return () => {
       events.removeListener(onRecognitionStart, events.EventTypes.RecognitionStart)
       events.removeListener(onRecognitionProgress, events.EventTypes.RecognitionProgress)
       events.removeListener(onRecognitionFinished, events.EventTypes.RecognitionFailure)
       events.removeListener(onRecognitionFinished, events.EventTypes.RecognitionSuccess)
+      window.removeEventListener('resize', onZoomChanged)
     }
   }, []);
  
+  const adjustedPosition = repositionBasedOnZoomChange(position, baseZoom, zoom)
+
   const classes = makeStyles({ 
     recognition_progress_box: {
       display: "inline-flex",
       position: 'fixed',
-      left: position.x,
-      top: position.y,
+      left: `${adjustedPosition.x}px`,
+      top: `${adjustedPosition.y}px`,
       zIndex: 1501,
     },
     recognition_progress_text: {
@@ -83,13 +105,14 @@ function RecognitionProgress(props) {
     }
   })(theme);
 
+  const scale = SCALING_FACTOR / zoom
   const value = Math.ceil(progress * 100)
   
   if (shown) {
     return (
       <ThemeProvider theme={theme}>
-        <Box className={classes.recognition_progress_box} >
-          <CircularProgress size='50' color='primary' variant="determinate" value={value}/>
+        <Box style={{transformOrigin: "left top", transform: `scale(${scale})`}} className={classes.recognition_progress_box} >
+            <CircularProgress size='70px' color='primary' disableShrink/>
           <Box
             top={0}
             left={0}
