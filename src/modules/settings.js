@@ -1,5 +1,3 @@
-import { TranslationMethod } from "./translation";
-
 const storage = browser.storage.sync
 
 const TRANSLATION_METHOD_KEY = "translationMethod"
@@ -32,6 +30,7 @@ export async function getDefaultTranslationMethod() {
 }
 
 export async function setDefaultTranslationMethod(value) {
+    console.log("set translation method", value)
     await set(TRANSLATION_METHOD_KEY, value)
 }
 

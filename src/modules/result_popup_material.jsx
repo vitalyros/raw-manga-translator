@@ -247,9 +247,9 @@ function TranslationTool(props) {
       className={props.classes.translate_method_select}
       value={props.translationMethod}
       onChange={props.onSelectTranslationMethod}
-      autoWidth='false'
+      autoWidth={true}
       MenuProps={{
-        className:  props.classes.translate_method_select_menu
+        className: props.classes.translate_method_select_menu
       }}
     >
       <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
@@ -260,7 +260,7 @@ function TranslationTool(props) {
       className={props.classes.translate_language_select}
       value={props.translationLanguage}
       onChange={props.onSelectTranslationLanguage}
-      autoWidth='false'
+      autoWidth={true}
       MenuProps={{
         className: props.classes.translate_language_select_menu
       }}>
@@ -393,16 +393,16 @@ function TranslationDialog(props) {
 
     const onSelectTranslationMethod = (event) => {
       var newTranslationMethod = event.target.value
+      setTranslationMethod(newTranslationMethod)
       settings.setDefaultTranslationMethod(newTranslationMethod)
       translateText(newTranslationMethod, translationLanguage, originalText)
-      setTranslationMethod(newTranslationMethod)
     };
 
     const onSelectTranslationLanguage = (event) => {
       var newTranslationLanguage = event.target.value
+      setTranslationLanguage(newTranslationLanguage)
       settings.setDefaultTranslationLanguage(newTranslationLanguage)
       translateText(translationMethod, newTranslationLanguage, originalText)
-      setTranslationLanguage(newTranslationLanguage)
     }
 
     const openWindowOnRecongitionEvent = (event) => {
@@ -425,7 +425,6 @@ function TranslationDialog(props) {
       setOriginalText("")
       setResultText("Recognition failed. Try reloading the page")
     }
-
 
     const onRecognitionSuccess = (event) => {
       openWindowOnRecongitionEvent(event)
@@ -497,7 +496,7 @@ function TranslationDialog(props) {
         events.removeListener(onTabZoomChanged, events.EventTypes.TabZoomChanged)
         window.removeEventListener('resize', onZoomChanged)
       }
-    }, []);
+    }, [translationMethod, translationLanguage]);
 
     const scale = getScale(zoom)
 
@@ -562,8 +561,8 @@ function TranslationDialog(props) {
         },
         translate_method_select_menu: {
           "& .MuiPopover-paper": {
-            width: `${170 * scale + 10}px`,
-            height: `${100 * scale + 10}px`,
+            width: `${170 * scale}px`,
+            height: `${100 * scale}px`,
           },
           "& .MuiMenu-list": {
             transformOrigin: "top left", 
@@ -585,8 +584,8 @@ function TranslationDialog(props) {
         translate_language_select_menu: {
           transformOrigin: "top left", 
           "& .MuiPopover-paper": {
-            width: `${80 * scale + 10}px`,
-            height: `${100 * scale + 10}px`,
+            width: `${80 * scale}px`,
+            height: `${100 * scale}px`,
           },
           "& .MuiMenu-list": {
             transformOrigin: "top left", 
