@@ -35,17 +35,22 @@ const wrapper_div_id = "romatora-translation-popup-wrapper"
 var wrapper_div = null;
 var dialog_component = null;
 
+const scalingEnabled = true
+
 const SCALING_FACTOR = 2
 
 function getCurrentZoom() {
   return window.devicePixelRatio
 }
 
+function getScale(zoom) {
+  return scalingEnabled ? SCALING_FACTOR / zoom : 1
+}
+
 function repositionBasedOnZoomChange(position, oldZoom, newZoom) {
-  const zoomRatio = oldZoom / SCALING_FACTOR
-    return { 
-    x: position.x * zoomRatio,
-    y: position.y * zoomRat 
+  return { 
+    x: position.x * oldZoom / SCALING_FACTOR,
+    y: position.y * newZoom / SCALING_FACTOR
   }
 }
 
@@ -162,13 +167,11 @@ class PaperComponent extends React.Component {
 
   render() {
     // var position = repositionBasedOnZoomChange(this.state.position, this.props.baseZoom, this.props.zoom)
-    var scale = SCALING_FACTOR / this.props.zoom
+    var scale = scalingEnabled ? SCALING_FACTOR / this.props.zoom : 1
     // todo: infer these numbers from styles
     var elevationBorderFix = 16
-    var rightBound = 420
-    var bottomBound = 46
     return (
-      <div style={{transformOrigin: "left top", transform: `scale(${scale})`}}>
+      // <div style={{transformOrigin: "left top", transform: `scale(${scale})`}}>
       <Draggable 
         // drag is bound within base position. left bound is fixed by dialog elevation border
         bounds={{ 
@@ -189,7 +192,7 @@ class PaperComponent extends React.Component {
             <Paper {...this.props} />
           {/* </div> */}
       </Draggable>
-      </div>
+      // </div>
     );
   }
 }
@@ -244,6 +247,10 @@ function TranslationTool(props) {
       className={props.classes.translate_method_select}
       value={props.translationMethod}
       onChange={props.onSelectTranslationMethod}
+      autoWidth='false'
+      MenuProps={{
+        className:  props.classes.translate_method_select_menu
+      }}
     >
       <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
       <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
@@ -252,7 +259,11 @@ function TranslationTool(props) {
     <Select
       className={props.classes.translate_language_select}
       value={props.translationLanguage}
-      onChange={props.onSelectTranslationLanguage}>
+      onChange={props.onSelectTranslationLanguage}
+      autoWidth='false'
+      MenuProps={{
+        className: props.classes.translate_language_select_menu
+      }}>
       {languageMenuItems}
     </Select>
     <div style={{ flexGrow: 1 }} />
@@ -397,7 +408,8 @@ function TranslationDialog(props) {
     const openWindowOnRecongitionEvent = (event) => {
       var currentZoom = getCurrentZoom();
       setBaseZoom(currentZoom)
-      var xPositionThreshold = 442 * (1 / currentZoom);
+      var scale = scalingEnabled ? 1 / currentZoom : 1
+      var xPositionThreshold = 442 * scale;
       var baseY = event.data.box.y_scrolled
       var baseX = event.data.box.x_scrolled + event.data.box.width;
       if (baseX > window.screen.width - xPositionThreshold) {
@@ -487,9 +499,11 @@ function TranslationDialog(props) {
       }
     }, []);
 
+    const scale = getScale(zoom)
+
     const classes = makeStyles({
         dialog: {
-          position: 'absolute',
+          // position: 'absolute',
         },
         dialog_paper: {
           position: 'absolute',
@@ -546,9 +560,21 @@ function TranslationDialog(props) {
           fontSize: "0.9rem",
           width: "170px"
         },
+        translate_method_select_menu: {
+          "& .MuiPopover-paper": {
+            width: `${170 * scale + 10}px`,
+            height: `${100 * scale + 10}px`,
+          },
+          "& .MuiMenu-list": {
+            transformOrigin: "top left", 
+            transform: `scale(${scale})`,
+            width: `170px`,
+          }
+        },
         translate_method_select_menu_item: {
           color: theme.palette.grey.veryDark,
-          fontSize: "0.9rem"
+          fontSize: "0.9rem",
+          width: `170px`,
         },
         translate_language_select: {
           marginLeft: '10px',
@@ -556,9 +582,22 @@ function TranslationDialog(props) {
           fontSize: "0.9rem",
           width: "80px"
         },
+        translate_language_select_menu: {
+          transformOrigin: "top left", 
+          "& .MuiPopover-paper": {
+            width: `${80 * scale + 10}px`,
+            height: `${100 * scale + 10}px`,
+          },
+          "& .MuiMenu-list": {
+            transformOrigin: "top left", 
+            transform: `scale(${scale})`,
+            width: `80px`,
+          }
+        },
         translate_language_select_menu_item: {
           color: theme.palette.grey.veryDark,
-          fontSize: "0.9rem"
+          fontSize: "0.9rem",
+          width: `80px`,
         },
         textfield_original_text : {
           minWidth: '380px',
@@ -659,6 +698,8 @@ function TranslationDialog(props) {
       }
     }
 
+
+
     return ( 
       <ErrorBoundary>
         <ThemeProvider theme={theme}>
@@ -668,8 +709,8 @@ function TranslationDialog(props) {
               root: classes.dialog,
               paper: classes.dialog_paper
             }}
-            style = {{ position: "absolute"}}
-            position="absolute"
+            style = {{ position: "absolute", transformOrigin: "top left", transform: `scale(${scale})`}}
+            // position="absolute"
             color="inherit"
             disableBackdropClick
             disableEnforceFocus
@@ -689,7 +730,6 @@ function TranslationDialog(props) {
               zoom: zoom
             }}
           >
-            {/* <div style={{transformOrigin: "top left", transform: `scale(${1 / zoom})`}}> */}
             <ErrorBoundary>
               <ResultPopupTitle 
                 open={open}
@@ -715,13 +755,12 @@ function TranslationDialog(props) {
                 classes={classes}
               />
             </ErrorBoundary>
-            {/* </div> */}
           </Dialog>
         </ThemeProvider>
       </ErrorBoundary>
     );
   } catch(e) {
-    console.log("ERROR", e)
+    console.error("failed to rendter dialog", e)
     return <div/>
   }
 }
