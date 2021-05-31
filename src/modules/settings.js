@@ -3,7 +3,7 @@ import { TranslationMethod } from "./translation";
 const storage = browser.storage.sync
 
 const TRANSLATION_METHOD_KEY = "translationMethod"
-const TRANSLATION_LANGUAGE_KEY = "translationMethod"
+const TRANSLATION_LANGUAGE_KEY = "translationLanguage"
 
 async function get(key) {
     var value = null
