@@ -45,7 +45,7 @@ function repositionBasedOnZoomChange(position, oldZoom, newZoom) {
   const zoomRatio = oldZoom / SCALING_FACTOR
     return { 
     x: position.x * zoomRatio,
-    y: position.y * zoomRatio
+    y: position.y * zoomRat 
   }
 }
 
@@ -395,14 +395,15 @@ function TranslationDialog(props) {
     }
 
     const openWindowOnRecongitionEvent = (event) => {
-      var xPositionThreshold = 442;
+      var currentZoom = getCurrentZoom();
+      setBaseZoom(currentZoom)
+      var xPositionThreshold = 442 * (1 / currentZoom);
       var baseY = event.data.box.y_scrolled
       var baseX = event.data.box.x_scrolled + event.data.box.width;
       if (baseX > window.screen.width - xPositionThreshold) {
         baseX = event.data.box.x_scrolled - xPositionThreshold
       }
       setBasePosition({ x: baseX, y: baseY})
-      setBaseZoom(getCurrentZoom())
       setOpen(true)
     }
 
@@ -668,7 +669,7 @@ function TranslationDialog(props) {
               paper: classes.dialog_paper
             }}
             style = {{ position: "absolute"}}
-            // position="abso
+            position="absolute"
             color="inherit"
             disableBackdropClick
             disableEnforceFocus

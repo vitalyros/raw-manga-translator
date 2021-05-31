@@ -2,6 +2,8 @@ import { TranslationMethod } from "./translation";
 
 const storage = browser.storage.sync
 
+const TRANSLATION_METHOD_KEY = "translationMethod"
+const TRANSLATION_LANGUAGE_KEY = "translationMethod"
 
 async function get(key) {
     var value = null
@@ -11,7 +13,6 @@ async function get(key) {
     } catch (e) {
         console.error("settings get error", key, e)
     }
-    console.log("settings get", key, value)
     return value;
 }
 
@@ -19,7 +20,6 @@ async function set(key, value) {
     try { 
         var data = {}
         data[key] = value
-        console.log("settings set", key, value)
         await storage.set(data)
     } catch (e) {
         console.error("settings set error", key, value, e)
@@ -28,20 +28,18 @@ async function set(key, value) {
 
 
 export async function getDefaultTranslationMethod() {
-    return await get("translationMethod")
+    return await get(TRANSLATION_METHOD_KEY)
 }
 
 export async function setDefaultTranslationMethod(value) {
-    var key = "translationMethod";
-    await set(key, value)
+    await set(TRANSLATION_METHOD_KEY, value)
 }
 
 export async function getDefaultTranslationLanguage() {
-    return await get("translationLanguage")
+    return await get(TRANSLATION_LANGUAGE_KEY)
 }
 
 export async function setDefaultTranslationLanguage(value) {
-    var key = "translationLanguage";
-    await set(key, value)
+    await set(TRANSLATION_LANGUAGE_KEY, value)
 }
 
