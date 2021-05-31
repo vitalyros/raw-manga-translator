@@ -26,7 +26,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ErrorBoundary from './error_boundary.jsx';
 import * as settings from './settings.js';
 import { theme } from '../themes/default.jsx';
-import _, { get } from "lodash";
+import _ from "lodash";
 
 const module_name = 'result_popup';
 
@@ -103,12 +103,6 @@ class PaperComponent extends React.Component {
     this.fireExclusionZoneUpdate()
   }
 
-  onResized(event) {
-    // this.setState({
-    //   windowProps: {width: document.body.clientWidth, height: document.body.clientHeight}
-    // })
-  }
-
   fireExclusionZoneUpdate() {
     try {
       var eventData = null;
@@ -156,12 +150,10 @@ class PaperComponent extends React.Component {
 
   componentDidMount() {
     events.addListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
-    // window.addEventListener('resize', this.onResizedWrapped)
   }
 
   componentWillUnmount() {
     events.removeListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
-    // window.removeEventListener('resize', this.onResizedWrapped)
   }
 
   componentDidUpdate() {

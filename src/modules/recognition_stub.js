@@ -1,9 +1,9 @@
 const events = require('./events.js');
+const tesseract = require('tesseract.js');
 
 const module_name = "recongition_stub";
 var enabled = false
 var throwError = false
-
 
 async function onImageCaptured(event) {
     if (enabled) {
@@ -76,4 +76,4 @@ export async function disable() {
         events.removeListener(onImageCaptured, events.EventTypes.image_captured)
         enabled = false
     }
-}
+} 
