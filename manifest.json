@@ -34,8 +34,8 @@
     },
 
     "web_accessible_resources": [
+      "lib/*",
       "dist/*",
-      "lang/*",
-      "node_modules/*"
+      "lang/*"
     ]
   }

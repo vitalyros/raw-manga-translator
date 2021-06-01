@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   mode: 'development',
@@ -24,5 +25,13 @@ module.exports = {
         loader: 'babel-loader',
       }
     ],
-  }
+  },
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: "./node_modules/tesseract.js/dist/worker.min.js", to: "tesseract" },
+        { from: "./node_modules/tesseract.js-core/tesseract-core.wasm.js", to: "tesseract-core" },
+      ],
+    }),
+  ]
 };
