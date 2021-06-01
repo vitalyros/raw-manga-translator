@@ -14,9 +14,9 @@ function logError(...arg) {
 async function startTessaract() {
     try {
         var startingWorker = tesseract.createWorker({
-            workerPath: browser.extension.getURL("./node_modules/tesseract.js/dist/worker.min.js"),
+            workerPath: browser.extension.getURL("./dist/tesseract/worker.min.js"),
             langPath: browser.extension.getURL("./lang"),
-            corePath: browser.extension.getURL("./node_modules/tesseract.js-core/tesseract-core.wasm.js"),
+            corePath: browser.extension.getURL("./dist/tesseract-core/tesseract-core.wasm.js"),
             logger: e => {
                 if (e.status == 'recognizing text') {
                     events.fire({
