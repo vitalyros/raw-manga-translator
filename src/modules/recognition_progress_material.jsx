@@ -151,7 +151,7 @@ async function lazyInitComponent() {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(lazyInitComponent, events.EventTypes.start_select_area)
+        events.addListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = true
     }
 }
@@ -166,7 +166,7 @@ export async function disable() {
             ReactDOM.unmountComponentAtNode(dialog_component)
             dialog_component = null;
         }
-        events.removeListener(lazyInitComponent, events.EventTypes.start_select_area)
+        events.removeListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = false
     }
 }

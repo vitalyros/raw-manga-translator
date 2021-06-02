@@ -234,7 +234,7 @@ function onMouseUp(event) {
             }
             if (width * height >= areaThreshold) {
                 events.fire({
-                    type: events.EventTypes.area_selected,
+                    type: events.EventTypes.SelectAreaSuccess,
                     from: module_name,
                     data: {
                         box: box
@@ -261,6 +261,11 @@ function onMouseDown(event) {
         selectionDiv.style.top = `${startY}px`;
         selectionDiv.style.height = `0px`;
         showSelectionDiv();
+        events.fire({
+            type: events.EventTypes.SelectAreaStart,
+            from: module_name,
+            data: {}
+        })
     }
 }
 
@@ -333,8 +338,8 @@ export async function enable() {
     if (!enabled) {
         events.addListener(onExclusionZoneUpdate, events.EventTypes.AreaSelectionExclusionZoneUpdate)
         events.addListener(onExclusionZoneDragUpdate, events.EventTypes.AreaSelectionExclusionZoneDragUpdate)
-        events.addListener(startSelectionMode, events.EventTypes.start_select_area)
-        events.addListener(stopSelectionMode, events.EventTypes.cancel_select_area)      
+        events.addListener(startSelectionMode, events.EventTypes.SelectAreaEnabled)
+        events.addListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled)      
         await events.fire({
            from: module_name,
            type: events.EventTypes.module_area_selection_enabled,
@@ -348,8 +353,8 @@ export async function disable() {
     if (enabled) {
         events.removeListener(onExclusionAreaUpdate, events.EventTypes.AreaSelectionExclusionZoneUpdate)
         events.removeListener(onExclusionZoneDragUpdate, events.EventTypes.AreaSelectionExclusionZoneDragUpdate)
-        events.removeListener(startSelectionMode, events.EventTypes.start_select_area)
-        events.removeListener(stopSelectionMode, events.EventTypes.cancel_select_area)      
+        events.removeListener(startSelectionMode, events.EventTypes.SelectAreaEnabled)
+        events.removeListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled)      
         enabled = false
     }
 }

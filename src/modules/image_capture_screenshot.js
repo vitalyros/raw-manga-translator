@@ -18,7 +18,7 @@ async function onAreaSelected(message) {
         var image_uri = await browser.tabs.captureVisibleTab(null, detail);
         events.fire({
             from: module_name,
-            type: events.EventTypes.image_captured,
+            type: events.EventTypes.ImageCaptureSuccess,
             data: {
                 box: box,
                 image_uri: image_uri
@@ -31,14 +31,14 @@ async function onAreaSelected(message) {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onAreaSelected, events.EventTypes.area_selected)
+        events.addListener(onAreaSelected, events.EventTypes.SelectAreaSuccess)
         enabled = true
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onAreaSelected, events.EventTypes.area_selected)
+        events.removeListener(onAreaSelected, events.EventTypes.SelectAreaSuccess)
         enabled = false
     }
 }

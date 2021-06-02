@@ -27,10 +27,12 @@ export const EventTypes = {
     
     module_area_selection_enabled: 'module_area_selection_enabled',
 
-    start_select_area: 'start_select_area',
-    cancel_select_area: 'cancel_select_area',
-    area_selected: 'area_selected',
-    image_captured: 'image_captured',
+    SelectAreaEnabled: 'SelectAreaEnabled',
+    SelectAreaDisabled: 'SelectAreaDisabled',
+    SelectAreaStart: 'SelectAreaStart',
+    SelectAreaSuccess: 'SelectAreaSuccess',
+
+    ImageCaptureSuccess: 'ImageCaptureSuccess',
 
     TranslationRequested: 'TranslationRequested',
     TranslationSuccess: 'TranslationSuccess',

@@ -117,16 +117,16 @@ function initilizeTesseract() {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(initilizeTesseract, events.EventTypes.start_select_area);
-        events.addListener(onImageCaptured, events.EventTypes.image_captured)
+        events.addListener(initilizeTesseract, events.EventTypes.SelectAreaEnabled);
+        events.addListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
         enabled = true
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(initilizeTesseract, events.EventTypes.start_select_area);
-        events.removeListener(onImageCaptured, events.EventTypes.image_captured)
+        events.removeListener(initilizeTesseract, events.EventTypes.SelectAreaEnabled);
+        events.removeListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
         if (worker != null) {
             worker.terminate();
         }

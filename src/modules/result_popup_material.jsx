@@ -66,7 +66,7 @@ class PaperComponent extends React.Component {
     }
     this.exclusionAreaName="result_popup_paper"
     this.onTextRecognizedWrapped = (e) => this.onTextRecognized(e)
-    this.onResizedWrapped = (e) => this.onResized(e)
+    this.onSelectAreaStartWrapped = (e) => this.onSelectAreaStart(e)
   }
   
   onDragStart(event, data) {
@@ -107,6 +107,12 @@ class PaperComponent extends React.Component {
         x: 0,
         y: 0}
     })
+    this.fireExclusionZoneUpdate()
+  }
+
+  onSelectAreaStart(event) {
+    // When we use Accordion to change dialog size ExclusionZoneUpdate is not fired 
+    // As a hotfix ExclusionZoneUpdate event is fired on every SelectAreaStart event 
     this.fireExclusionZoneUpdate()
   }
 
@@ -155,12 +161,16 @@ class PaperComponent extends React.Component {
     }
   }
 
+  
+
   componentDidMount() {
     events.addListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
+    events.addListener(this.onSelectAreaStartWrapped, events.EventTypes.SelectAreaStart)
   }
 
   componentWillUnmount() {
     events.removeListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
+    events.removeListener(this.onSelectAreaStartWrapped, events.EventTypes.SelectAreaStart)
   }
 
   componentDidUpdate() {
@@ -828,7 +838,7 @@ async function lazyInitComponent() {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(lazyInitComponent, events.EventTypes.start_select_area)
+        events.addListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = true
     }
 }
@@ -843,7 +853,7 @@ export async function disable() {
             ReactDOM.unmountComponentAtNode(dialog_component)
             dialog_component = null;
         }
-        events.removeListener(lazyInitComponent, events.EventTypes.start_select_area)
+        events.removeListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = false
     }
 }

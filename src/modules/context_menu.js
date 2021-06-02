@@ -59,13 +59,13 @@ async function intiializeSelectionMenu() {
 async function changeSelectionTabState(selection) {
     if (selection) {
         events.fire({
-            type: events.EventTypes.start_select_area,
+            type: events.EventTypes.SelectAreaEnabled,
             from: module_name,
             data: {}
         });
     } else {
         events.fire({
-            type: events.EventTypes.cancel_select_area,
+            type: events.EventTypes.SelectAreaDisabled,
             from: module_name,
             data: {}
         });

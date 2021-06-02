@@ -66,14 +66,14 @@ async function onImageCaptured(event) {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onImageCaptured, events.EventTypes.image_captured)
+        events.addListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
         enabled = true
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onImageCaptured, events.EventTypes.image_captured)
+        events.removeListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
         enabled = false
     }
 } 
