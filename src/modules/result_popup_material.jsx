@@ -26,7 +26,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ErrorBoundary from './error_boundary.jsx';
 import * as settings from './settings.js';
 import { theme } from '../themes/default.jsx';
-import _ from "lodash";
+import _, { size } from "lodash";
 
 const module_name = 'result_popup';
 
@@ -37,6 +37,8 @@ var dialog_component = null;
 
 const scalingEnabled = true
 
+// Factor by witch we increase the size of all of our elements
+// With factor of 1 elements look to small on high resolution screens
 const SCALING_FACTOR = 2
 
 function getCurrentZoom() {
@@ -406,15 +408,49 @@ function TranslationDialog(props) {
     }
 
     const openWindowOnRecongitionEvent = (event) => {
-      var currentZoom = getCurrentZoom();
+      var currentZoom = getCurrentZoom()
       setBaseZoom(currentZoom)
-      var scale = scalingEnabled ? 1 / currentZoom : 1
-      var xPositionThreshold = 442 * scale;
-      var baseY = event.data.box.y_scrolled
-      var baseX = event.data.box.x_scrolled + event.data.box.width;
-      if (baseX > window.screen.width - xPositionThreshold) {
-        baseX = event.data.box.x_scrolled - xPositionThreshold
+      var scale = getScale(currentZoom)
+      // Moves the dialog a bit to the right from the selected area, it looks better this way
+      const baseAdjustmentX = 10;
+      // If the dialog overflows the right or the bottom screen border it needs to be adjusted to the left or to the top respectively. 
+      // To test for overflow and to calculate adjustment use innerWidth/innerHeight and  also estimated dialog proportions, scaled by scaling factor
+      // todo: properly calculate expected dialog proportions instead of hardcoding them
+      const fixCoordinate = (baseValue, maxValue, visibleValue, sizeEstimation, hardFix, name) => {
+        var fix = maxValue - visibleValue - sizeEstimation;
+        console.log(`base ${name} fix. baseValue: ${baseValue}, visibleValue: ${visibleValue}, maxValue: ${maxValue}, sizeEstimation: ${sizeEstimation}, fix: ${fix}, hardfix: ${hardFix}`)
+        // Replase calculated fix with hardfix
+        if (fix < 0 && hardFix && hardFix < 0 && visibleValue + hardFix > 0) {
+          // Do not apply hardfix if it somehow modifies visibleValue to negative
+          fix = hardFix
+        } 
+        if (fix < 0 && visibleValue + fix > 0) {
+          // Only adjust to the left or to the top in case of overflow
+          // Do not apply fix if it somehow modifies visibleValue to negative
+          return baseValue + fix
+        } else {
+          return baseValue
+        }
       }
+      const extimatedSizeY = 320 * scale
+      const estimatedSizeX = 450 * scale
+    
+      var baseY = fixCoordinate(
+        event.data.box.y_scrolled, window.innerHeight, 
+        event.data.box.y_visible, 
+        extimatedSizeY, 
+        null, 
+        "Y")
+
+      // For X we move the window to the other size of selection box
+      const hardFixX = -1 * event.data.box.width - estimatedSizeX - baseAdjustmentX
+      var baseX = fixCoordinate(
+        event.data.box.x_scrolled + event.data.box.width + baseAdjustmentX, 
+        window.innerWidth, 
+        event.data.box.x_visible + event.data.box.width + baseAdjustmentX, 
+        estimatedSizeX, 
+        hardFixX, 
+        "X")
       setBasePosition({ x: baseX, y: baseY})
       setOpen(true)
     }
@@ -697,12 +733,9 @@ function TranslationDialog(props) {
       }
     }
 
-
-
     return ( 
       <ErrorBoundary>
         <ThemeProvider theme={theme}>
-
           <Dialog 
             classes={{
               root: classes.dialog,
