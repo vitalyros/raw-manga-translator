@@ -22,7 +22,7 @@ var areaThreshold = 400;
 var exclusionZones = {};
 var exclusionZoneDragged = false;
 var exclusionZonesDivs = {};
-var debugExclusionZones = false;
+var debugExclusionZones = true;
 
 var scrollX = 0;
 var scrollY = 0;
@@ -167,7 +167,7 @@ function onMouseMove(event) {
     if (isMouseDown) {
         if (exclusionZoneDragged) {
             isMouseDown = false;
-        } else if (isInExclusionZone(event.pageX, event.pageY)) {
+        } else if (intersetcWithExclusionZone(startX, startY, event.pageX, event.pageY)) {
             isMouseDown = false;
             hideSelectionDiv();
         } else {
@@ -211,13 +211,13 @@ function onScroll(event) {
 
 function onMouseUp(event) {
     if (isMouseDown) {
-        isMouseDown = false;
-        if (!exclusionZoneDragged && !isInExclusionZone(event.pageX, event.pageY)) {
+        isMouseDown = false;            
+       ;
+        if (!exclusionZoneDragged && !intersetcWithExclusionZone(startX, startY, event.pageX, event.pageY)) {
             scrollX = window.scrollX
             scrollY = window.scrollY
             endX = event.pageX;
-            endY = event.pageY;
-            console.log(`Ended Dragging ${endX} ${endY}`);
+            endY = event.pageY
             var x_scrolled = selectionDivUpperCornerX();
             var y_scrolled = selectionDivUpperCornerY();
             var x_visible = x_scrolled - scrollX;
@@ -262,6 +262,20 @@ function onMouseDown(event) {
         selectionDiv.style.height = `0px`;
         showSelectionDiv();
     }
+}
+
+function intersetcWithExclusionZone(startX, startY, endX, endY) {
+    var result = Object.keys(exclusionZones).find(function(key) {
+        var zone = exclusionZones[key]
+        const left = Math.min(startX, endX);
+        const right = Math.max(startX, endX);
+        const top = Math.min(startY, endY);
+        const bottom = Math.max(startY, endY);
+        const crossedByX = left <= zone.right && right >= zone.left
+        const crossedByY = top <= zone.bottom && bottom >= zone.top
+        return crossedByX && crossedByY;
+    });
+    return Boolean(result);
 }
 
 function isInExclusionZone(x, y) {
