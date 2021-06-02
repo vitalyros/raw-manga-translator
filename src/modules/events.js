@@ -27,6 +27,8 @@ export const EventTypes = {
     
     module_area_selection_enabled: 'module_area_selection_enabled',
 
+    AccordionResized: 'AccordionResized',
+
     SelectAreaEnabled: 'SelectAreaEnabled',
     SelectAreaDisabled: 'SelectAreaDisabled',
     SelectAreaStart: 'SelectAreaStart',

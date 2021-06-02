@@ -67,6 +67,7 @@ class PaperComponent extends React.Component {
     this.exclusionAreaName="result_popup_paper"
     this.onTextRecognizedWrapped = (e) => this.onTextRecognized(e)
     this.onSelectAreaStartWrapped = (e) => this.onSelectAreaStart(e)
+    this.onAccordionResizedWrapped = (e) => this.onAccordionResized(e)
   }
   
   onDragStart(event, data) {
@@ -111,8 +112,13 @@ class PaperComponent extends React.Component {
   }
 
   onSelectAreaStart(event) {
+    // As a hotfix for all possible bugs when ExclusionZoneUpdate event is not fired on dialog resize we fire such event on every SelectAreaStart event
+    this.fireExclusionZoneUpdate()
+  }
+
+  onAccordionResized(event) {
     // When we use Accordion to change dialog size ExclusionZoneUpdate is not fired 
-    // As a hotfix ExclusionZoneUpdate event is fired on every SelectAreaStart event 
+    // As a hotfix ExclusionZoneUpdate event is fired on every AccordionResized event 
     this.fireExclusionZoneUpdate()
   }
 
@@ -166,11 +172,13 @@ class PaperComponent extends React.Component {
   componentDidMount() {
     events.addListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
     events.addListener(this.onSelectAreaStartWrapped, events.EventTypes.SelectAreaStart)
+    events.addListener(this.onAccordionResizedWrapped, events.EventTypes.AccordionResized)
   }
 
   componentWillUnmount() {
     events.removeListener(this.onTextRecognizedWrapped, events.EventTypes.RecognitionSuccess)
     events.removeListener(this.onSelectAreaStartWrapped, events.EventTypes.SelectAreaStart)
+    events.removeListener(this.onAccordionResizedWrapped, events.EventTypes.AccordionResized)
   }
 
   componentDidUpdate() {
@@ -215,6 +223,20 @@ function TranslationTool(props) {
   const onChangeAccordion = (event, value) => {
     setExpanded(value)
   }
+
+  useEffect(() => {
+    // This effect is part of a workaround for a problem that selection exclusion zone is not updated after dialog is resized by Accordion element
+    (async() => {
+      // Wait for accordion transition to finish
+      await new Promise(r => setTimeout(r, 500));
+      events.fire({
+        type: events.EventTypes.AccordionResized,
+        from: module_name,
+        data: {}
+      })
+    })()
+  },
+  [expanded])
 
   const languageMenuItems = translation.TranslationLanguageList.map((lang, i) => {
     return <MenuItem key={i} className={props.classes.translate_language_select_menu_item} value={lang.name}>{lang.name}</MenuItem>
