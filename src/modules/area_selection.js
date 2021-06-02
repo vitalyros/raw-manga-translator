@@ -22,7 +22,7 @@ var areaThreshold = 400;
 var exclusionZones = {};
 var exclusionZoneDragged = false;
 var exclusionZonesDivs = {};
-var debugExclusionZones = true;
+var debugExclusionZones = false;
 
 var scrollX = 0;
 var scrollY = 0;
