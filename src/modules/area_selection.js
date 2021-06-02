@@ -255,7 +255,6 @@ function onMouseDown(event) {
         scrollY = window.scrollY
         startX = event.pageX;
         startY = event.pageY;
-        console.log(`Start Dragging ${startX} ${startY}`)
         initializeSelectionDiv();
         selectionDiv.style.left = `${startX}px`;
         selectionDiv.style.width = `0px`;
@@ -268,17 +267,12 @@ function onMouseDown(event) {
 function isInExclusionZone(x, y) {
     var result = Object.keys(exclusionZones).find(function(key) {
         var zone = exclusionZones[key]
-        console.log("exclusion zone check", x, y, zone.left, zone.right, zone.top, zone.bottom)
         if (x >= zone.left && x <= zone.right && y >= zone.top && y <= zone.bottom) {
-            console.log("mouse in exclusion zone ", key, zone)
             return true;
         } else {
             return false;
         }
     });
-    if (!result) {
-        console.log("mouse is not in exclusion zone")
-    }
     return Boolean(result);
 }
 

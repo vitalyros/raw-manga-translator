@@ -101,7 +101,6 @@ async function onEvent(event) {
 }  
 
 export function addListener(listener, event_type) {
-    console.log("ADD LISTENER", listener, event_type)
     if (typeof event_type !== 'undefined') {
         var type_listeners = listeners_by_type[event_type];
         if (typeof type_listeners === 'undefined') {

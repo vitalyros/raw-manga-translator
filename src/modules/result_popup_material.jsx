@@ -815,12 +815,10 @@ async function lazyInitComponent() {
       if (!translationMethod) {
         translationMethod = translation.TranslationMethod.GoogleTranslateTab
       }
-      console.log("translation method", translationMethod)
       var translationLanguage = await settings.getDefaultTranslationLanguage()
       if (!translationLanguage) {
         translationLanguage = translation.TranslationLanguages.English.name
       }
-      console.log("translation language", translationLanguage)
       dialog_component = await ReactDOM.render(<TranslationDialog translationMethod={translationMethod} translationLanguage={translationLanguage}/>, document.querySelector(`#${wrapper_div_id}`));
     } catch(e) {
       console.error ("Failed to initialize popup", dialog_component, e)
