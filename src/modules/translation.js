@@ -6,9 +6,18 @@ export const TranslationMethod = {
 
 
 export const TranslationLanguageList = [
-    { name: "Russian", code: "ru"},
+    { name: "Arabic", code: "ar"},
+    { name: "Chinese", code: "zh-CN"},
     { name: "English", code: "en"},
-    { name: "Italian", code: "it"}
+    { name: "French", code: "fr"},
+    { name: "German", code: "de"},
+    { name: "Hindi", code: "hi"},
+    { name: "Indonesian", code: "id"},
+    { name: "Italian", code: "it"},
+    { name: "Portuguese", code: "pt"},
+    { name: "Russian", code: "ru"},
+    { name: "Spanish", code: "es"},
+    { name: "Urdu", code: "ur"}
   ]
 
 export const TranslationLanguages = Object.fromEntries(TranslationLanguageList.map((lang) => {

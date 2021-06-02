@@ -412,7 +412,7 @@ function TranslationDialog(props) {
       setBaseZoom(currentZoom)
       var scale = getScale(currentZoom)
       // Moves the dialog a bit to the right from the selected area, it looks better this way
-      const baseAdjustmentX = 10;
+      const baseAdjustmentX = 16;
       // If the dialog overflows the right or the bottom screen border it needs to be adjusted to the left or to the top respectively. 
       // To test for overflow and to calculate adjustment use innerWidth/innerHeight and  also estimated dialog proportions, scaled by scaling factor
       // todo: properly calculate expected dialog proportions instead of hardcoding them
@@ -433,7 +433,7 @@ function TranslationDialog(props) {
         }
       }
       const extimatedSizeY = 320 * scale
-      const estimatedSizeX = 450 * scale
+      const estimatedSizeX = 470 * scale
     
       var baseY = fixCoordinate(
         event.data.box.y_scrolled, window.innerHeight, 
@@ -444,6 +444,7 @@ function TranslationDialog(props) {
 
       // For X we move the window to the other size of selection box
       const hardFixX = -1 * event.data.box.width - estimatedSizeX - baseAdjustmentX
+      // const hardFixX = null
       var baseX = fixCoordinate(
         event.data.box.x_scrolled + event.data.box.width + baseAdjustmentX, 
         window.innerWidth, 
@@ -593,7 +594,9 @@ function TranslationDialog(props) {
         translate_method_select: {
           color: theme.palette.grey.veryDark,
           fontSize: "0.9rem",
-          width: "170px"
+          width: `170px`,
+          // widthMin: `170px`,
+          // widthMax: "170px"
         },
         translate_method_select_menu: {
           "& .MuiPopover-paper": {
@@ -610,32 +613,35 @@ function TranslationDialog(props) {
           color: theme.palette.grey.veryDark,
           fontSize: "0.9rem",
           width: `170px`,
+          height: `30px`
         },
         translate_language_select: {
           marginLeft: '10px',
           color: theme.palette.grey.veryDark,
           fontSize: "0.9rem",
-          width: "80px"
+          widthMin: `100px`,
+          widthMax: `120px`,
         },
         translate_language_select_menu: {
           transformOrigin: "top left", 
           "& .MuiPopover-paper": {
-            width: `${80 * scale}px`,
-            height: `${100 * scale}px`,
+            width: `${120 * scale}px`,
+            height: `${150 * scale}px`,
           },
           "& .MuiMenu-list": {
             transformOrigin: "top left", 
             transform: `scale(${scale})`,
-            width: `80px`,
+            width: `120px`,
           }
         },
         translate_language_select_menu_item: {
           color: theme.palette.grey.veryDark,
           fontSize: "0.9rem",
-          width: `80px`,
+          width: `120px`,
+          height: `30px`
         },
         textfield_original_text : {
-          minWidth: '380px',
+          minWidth: '400px',
           marginBottom: '3px',
           "& .MuiInputBase-input": {
             fontSize: "1rem",
