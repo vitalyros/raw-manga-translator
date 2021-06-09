@@ -1,5 +1,5 @@
 import * as events from './events.js';
-import * as translation from './translation.js';
+import * as translation from '../utils/translation';
 
 const module_name = 'translate_stub';
 

@@ -1,4 +1,4 @@
-var events = require('./events.js');
+import * as events from './events';
 
 const module_name = 'context_menu';
 
@@ -115,7 +115,7 @@ export async function enable() {
         await intiializeSelectionMenu(); 
         browser.tabs.onActivated.addListener(tabActivated);
         browser.tabs.onRemoved.addListener(tabRemoved);
-        events.addListener(passCurrentSelectionState, events.EventTypes.module_area_selection_enabled);
+        events.addListener(passCurrentSelectionState, events.EventTypes.SelectionModeEnabled);
         enabled = true
     }
 }

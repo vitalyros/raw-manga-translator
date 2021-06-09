@@ -1,7 +1,19 @@
+import {TranslationMethod, TranslationLanguages} from './translation'
+
 const storage = browser.storage.sync
 
 const TRANSLATION_METHOD_KEY = "translationMethod"
 const TRANSLATION_LANGUAGE_KEY = "translationLanguage"
+const DEBUG_ENABLED = "debugEnabled"
+
+async function getWithDefaultValue(key, defaultValue) {
+    const value = get(key)
+    if (value === null || typeof value === 'undefined') {
+        return defaultValue
+    } else {
+        return value
+    }
+}
 
 async function get(key) {
     var value = null
@@ -26,19 +38,25 @@ async function set(key, value) {
 
 
 export async function getDefaultTranslationMethod() {
-    return await get(TRANSLATION_METHOD_KEY)
+    return await getWithDefaultValue(TRANSLATION_METHOD_KEY, TranslationMethod.GoogleTranslateApi)
 }
 
 export async function setDefaultTranslationMethod(value) {
-    console.log("set translation method", value)
     await set(TRANSLATION_METHOD_KEY, value)
 }
 
 export async function getDefaultTranslationLanguage() {
-    return await get(TRANSLATION_LANGUAGE_KEY)
+    return await getWithDefaultValue(TRANSLATION_LANGUAGE_KEY, TranslationLanguages.English,name)
 }
 
 export async function setDefaultTranslationLanguage(value) {
     await set(TRANSLATION_LANGUAGE_KEY, value)
 }
 
+export async function getDebugEnabled() {
+    return await getWithDefaultValue(DEBUG_ENABLED, true)
+}
+
+export async function setDebugEnabled() {
+    await set(DEBUG_ENABLED, value)
+}

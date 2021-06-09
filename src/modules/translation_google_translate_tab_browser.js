@@ -1,4 +1,4 @@
-import * as translation from './translation.js';
+import * as translation from '../utils/translation';
 import * as events from "./events.js";
 import * as tabs from '../utils/tabs.js'
 

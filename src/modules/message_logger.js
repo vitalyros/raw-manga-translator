@@ -1,23 +1,27 @@
-var events = require('./events.js');
+import * as events from './events';
+import {loggingForModule} from '../utils/logging';
 
-const module_name = 'message_logger';
+const moduleName = 'event_logger';
+const logging = loggingForModule(moduleName)
 
 var enabled = false;
 
-function onMessage(message) {
-    console.log("message_logger: ", message);
+function onEvent(event) {
+    logging.debug(event);
 }
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onMessage);
+        events.addListener(onEvent);
         enabled = true;
+        logging.debug("module enabled")
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onMessage);
+        events.removeListener(onEvent);
         enabled = false;
+        logging.debug("module disabled")
     }
 }

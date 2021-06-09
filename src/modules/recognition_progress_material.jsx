@@ -6,9 +6,9 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Box from '@material-ui/core/Box';
 import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
-import * as translation from './translation.js';
+import * as translation from '../utils/translation';
 import ErrorBoundary from './error_boundary.jsx';
-import * as settings from './settings.js';
+import * as settings from '../utils/settings';
 import { theme } from '../themes/default.jsx';
 import _ from "lodash";
 

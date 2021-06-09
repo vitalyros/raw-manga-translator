@@ -1,0 +1,22 @@
+import {getDebugEnabled} from './settings'
+import {APP_NAME} from './const'
+
+const debugEnabled = getDebugEnabled();
+debug()
+
+export function error(...args) {
+    console.error(APP_NAME, ...args)
+}
+
+export function debug(...args) {
+    if (debugEnabled) {
+        console.debug(APP_NAME, ...args)
+    }
+}
+
+export function loggingForModule(moduleName) {
+    return {
+        error: (...args) => error(moduleName, ...args),
+        debug: (...args) => debug(moduleName, ...args),
+    }
+}

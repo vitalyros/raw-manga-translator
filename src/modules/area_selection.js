@@ -1,13 +1,11 @@
-var events = require('./events.js');
+import * as events from './events';
+import * as logging from '../utils/logging';
 
 const module_name = 'area_selection';
 
 const borderWidth = 2;
 
 var enabled = false;
-
-var selection_mode = false;
-var document_bak = null;
 
 var isMouseDown = false;
 
@@ -22,80 +20,10 @@ var areaThreshold = 400;
 var exclusionZones = {};
 var exclusionZoneDragged = false;
 var exclusionZonesDivs = {};
-var debugExclusionZones = false;
+var debugExclusionZones = true;
 
 var scrollX = 0;
 var scrollY = 0;
-
-async function startSelectionMode() {
-    try {
-        if (!selection_mode) {
-            document_bak = {};
-            if (typeof document.onmousemove !== 'undefined') {
-                document_bak.onmousemove = document.onmousemove;
-            }
-            if (typeof document.onmouseup !== 'undefined') {
-                document_bak.onmouseup = document.onmouseup;
-            }
-            if (typeof document.onmousedown !== 'undefined') {
-                document_bak.onmousedown = document.onmousedown;
-            }
-            if (typeof document.ondragstart !== 'undefined') {
-                document_bak.ondragstart = document.ondragstart;
-            }
-            if (typeof document.onselectstart !== 'undefined') {
-                document_bak.onselectstart = document.onselectstart;
-            }
-
-            document.onmousemove = onMouseMove;
-            document.onmouseup = onMouseUp;
-            document.onmousedown = onMouseDown;
-            document.ondragstart = function(e) {
-                e.preventDefault();
-                return false
-            };
-            document.onselectstart = function(e) {
-                e.preventDefault();
-                return false
-            };
-            window.addEventListener('scroll', onScroll);
-            selection_mode = true;
-        }
-    } catch (e) {
-        console.error("Failed enableSelectionMode", e)
-    }
-}
-
-async function stopSelectionMode() {
-    console.log("stop selection mode")
-    try {
-        if (selection_mode) {
-            if (document_bak != null) {
-                if (typeof document.onmousemove !== 'undefined') {
-                    document.onmousemove = document_bak.onmousemove;
-                }
-                if (typeof document.onmouseup !== 'undefined') {
-                    document.onmouseup = document_bak.onmouseup;
-                }
-                if (typeof document.onmousedown !== 'undefined') {
-                    document.onmousedown = document_bak.onmousedown;
-                }
-                if (typeof document.ondragstart !== 'undefined') {
-                    document.ondragstart = document_bak.ondragstart;
-                }
-                if (typeof document.onselectstart !== 'undefined') {
-                    document.onselectstart = document_bak.onselectstart;
-                }
-                window.removeEventListener('scroll', onScroll);
-                document_bak = null;
-            }
-            hideSelectionDiv();
-            selection_mode = false;
-        }
-    } catch (e) {
-        console.error("Failed disableSelectionMode", e)
-    }
-}
 
 
 function selectionDivSide(start, end) {
@@ -152,14 +80,14 @@ function showSelectionDiv() {
     }
 }
 
-function hideSelectionDiv() {
+export function hideSelectionDiv() {
     if (typeof selectionDiv !== "undefined" && selectionDiv != null) {
         selectionDiv.style.display = "none";
     }
 }
 
 
-function onMouseMove(event) {
+export function onMouseMove(event) {
     if (event.button != 0) {
         isMouseDown = false;
         // hideSelectionDiv();   
@@ -185,7 +113,7 @@ function onMouseMove(event) {
     }
 }
 
-function onScroll(event) {
+export function onScroll(event) {
     if (isMouseDown) {
         if (!exclusionZoneDragged) {
             endX -= scrollX;
@@ -209,7 +137,7 @@ function onScroll(event) {
 }
 
 
-function onMouseUp(event) {
+export function onMouseUp(event) {
     if (isMouseDown) {
         isMouseDown = false;            
        ;
@@ -248,7 +176,7 @@ function onMouseUp(event) {
     }
 }
 
-function onMouseDown(event) {
+export function onMouseDown(event) {
     if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY)) {
         isMouseDown = true;
         scrollX = window.scrollX
@@ -338,14 +266,8 @@ export async function enable() {
     if (!enabled) {
         events.addListener(onExclusionZoneUpdate, events.EventTypes.AreaSelectionExclusionZoneUpdate)
         events.addListener(onExclusionZoneDragUpdate, events.EventTypes.AreaSelectionExclusionZoneDragUpdate)
-        events.addListener(startSelectionMode, events.EventTypes.SelectAreaEnabled)
-        events.addListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled)      
-        await events.fire({
-           from: module_name,
-           type: events.EventTypes.module_area_selection_enabled,
-           data: {} 
-        });
         enabled = true
+        logging.debug(module_name, "module enabled")
     }
 }
 
@@ -353,8 +275,7 @@ export async function disable() {
     if (enabled) {
         events.removeListener(onExclusionAreaUpdate, events.EventTypes.AreaSelectionExclusionZoneUpdate)
         events.removeListener(onExclusionZoneDragUpdate, events.EventTypes.AreaSelectionExclusionZoneDragUpdate)
-        events.removeListener(startSelectionMode, events.EventTypes.SelectAreaEnabled)
-        events.removeListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled)      
         enabled = false
+        logging.debug(module_name, "module disabled")
     }
 }

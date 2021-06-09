@@ -1,16 +1,16 @@
-var events = require('./events.js');
+import * as events from './events';
+import * as logging from '../utils/logging';
 
 const module_name = 'page_capture_screenshot'
 var enabled = false;
 
 async function onPageInitialized(message) {
     try {
-        var data = message.data
         var rect = {
             x: 0,
             y: 0,
-            width: data.width * 3,
-            height: data.height * 3
+            width: window.innerWidth * 0.5,
+            height: window.innerHeight * 0.5
         }
         var detail = {
             quality: 100,
@@ -32,14 +32,14 @@ async function onPageInitialized(message) {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onPageInitialized, events.EventTypes.PageInitialized)
+        events.addListener(onPageInitialized, events.EventTypes.SelectAreaEnabled)
         enabled = true
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onPageInitialized, events.EventTypes.PageInitialized)
+        events.removeListener(onPageInitialized, events.EventTypes.SelectAreaEnabled)
         enabled = false
     }
 }

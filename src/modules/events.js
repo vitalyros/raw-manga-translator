@@ -25,9 +25,11 @@ export const EventTypes = {
 
     TabZoomChanged: 'TabZoomChanged',
     
-    module_area_selection_enabled: 'module_area_selection_enabled',
+    SelectionModeEnabled: 'SelectionModeEnabled',
 
     AccordionResized: 'AccordionResized',
+
+    ImagesClicked: 'ImagesClicked',
 
     SelectAreaEnabled: 'SelectAreaEnabled',
     SelectAreaDisabled: 'SelectAreaDisabled',
@@ -63,15 +65,18 @@ async function sendToPluginBackground(event) {
     await browser.runtime.sendMessage(browser.runtime.id, event)
 }
 
-export async function fire(event) {
+// local = true means it should not be sent from Background to Page or from Page to Background
+export async function fire(event, local) {
     if (enabled) {
         event.nick = plugin_nickname
         onEvent(event);
-        if (location === Location.Background) {
-            sendToActiveTab(event)
-        }
-        if (location === Location.Page) {
-            sendToPluginBackground(event)
+        if (!local) {
+            if (location === Location.Background) {
+                sendToActiveTab(event)
+            }
+            if (location === Location.Page) {
+                sendToPluginBackground(event)
+            }
         }
     }
 }

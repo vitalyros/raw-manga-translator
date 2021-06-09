@@ -1,4 +1,4 @@
-import * as translation from './translation.js';
+import * as translation from '../utils/translation';
 import * as translate_api from 'google-translate-api-browser';
 import * as events from "./events.js";
 

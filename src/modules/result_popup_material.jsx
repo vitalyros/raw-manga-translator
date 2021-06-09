@@ -1,4 +1,5 @@
-import * as events from "./events.js";
+import * as events from './events';
+import * as logging from '../utils/logging';
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { makeStyles, useTheme } from '@material-ui/core';
@@ -16,7 +17,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import DisplayHocrWithImage from './display_hocr_react.jsx';
-import * as translation from './translation.js';
+import * as translation from '../utils/translation';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import Accordion from '@material-ui/core/Accordion';
@@ -24,7 +25,7 @@ import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ErrorBoundary from './error_boundary.jsx';
-import * as settings from './settings.js';
+import * as settings from '../utils/settings';
 import { theme } from '../themes/default.jsx';
 import _, { size } from "lodash";
 
@@ -65,7 +66,7 @@ class PaperComponent extends React.Component {
       lastReportedExclusionAreaEventData: null
     }
     this.exclusionAreaName="result_popup_paper"
-    this.onTextRecognizedWrapped = (e) => this.onTextRecognized(e)
+    this.onTextRecognizedWrapped = async (e) => this.onTextRecognized(e)
     this.onSelectAreaStartWrapped = (e) => this.onSelectAreaStart(e)
     this.onAccordionResizedWrapped = (e) => this.onAccordionResized(e)
   }
@@ -102,12 +103,13 @@ class PaperComponent extends React.Component {
     })
   }
 
-  onTextRecognized(event) {
+  async onTextRecognized(event) {
     this.setState({
       position: { 
         x: 0,
         y: 0}
     })
+    // Give time to finish transitions
     this.fireExclusionZoneUpdate()
   }
 
@@ -844,13 +846,7 @@ async function lazyInitComponent() {
   if (!dialog_component) {
     try {
       var translationMethod = await settings.getDefaultTranslationMethod()
-      if (!translationMethod) {
-        translationMethod = translation.TranslationMethod.GoogleTranslateTab
-      }
       var translationLanguage = await settings.getDefaultTranslationLanguage()
-      if (!translationLanguage) {
-        translationLanguage = translation.TranslationLanguages.English.name
-      }
       dialog_component = await ReactDOM.render(<TranslationDialog translationMethod={translationMethod} translationLanguage={translationLanguage}/>, document.querySelector(`#${wrapper_div_id}`));
     } catch(e) {
       console.error ("Failed to initialize popup", dialog_component, e)
