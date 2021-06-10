@@ -490,6 +490,13 @@ function TranslationDialog(props) {
       setOpen(true)
     }
 
+    const onBubbleRecognitionFailure = (event) => {
+      openWindowOnRecongitionEvent(event)
+      setError(true)
+      setOriginalText("")
+      setResultText("Speech bubble not recognized.\nTry to select text by dragging")
+    }
+
     const onRecognitionFailure = (event) => {
       openWindowOnRecongitionEvent(event)
       setError(true)
@@ -553,6 +560,7 @@ function TranslationDialog(props) {
     const adjustedPosition = repositionBasedOnZoomChange(basePosition, baseZoom, zoom)
     
     useEffect(() => {
+      events.addListener(onBubbleRecognitionFailure, events.EventTypes.BubbleRecognitionFailure)
       events.addListener(onTranslationFailure, events.EventTypes.TranslationFailure)
       events.addListener(onTranslationSuccess, events.EventTypes.TranslationSuccess)
       events.addListener(onRecognitionFailure, events.EventTypes.RecognitionFailure)
@@ -560,6 +568,7 @@ function TranslationDialog(props) {
       events.addListener(onTabZoomChanged, events.EventTypes.TabZoomChanged)
       window.addEventListener('resize', onZoomChanged)
       return () => {
+        events.addListener(onBubbleRecognitionFailure, events.EventTypes.BubbleRecognitionFailure)
         events.removeListener(onTranslationFailure, events.EventTypes.TranslationFailure)
         events.removeListener(onTranslationSuccess, events.EventTypes.TranslationSuccess)
         events.removeListener(onRecognitionFailure, events.EventTypes.RecognitionFailure)

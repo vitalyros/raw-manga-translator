@@ -1,4 +1,8 @@
-import * as tabs from '../utils/tabs.js'
+import * as tabs from '../utils/tabs'
+import {APP_NAME} from '../utils/const'
+import {loggingForModule} from '../utils/logging'
+
+const logging = loggingForModule("events")
 
 export const Location = {
     Undefined: 'Undefined',
@@ -42,10 +46,9 @@ export const EventTypes = {
     TranslationSuccess: 'TranslationSuccess',
     TranslationFailure: 'TranslationFailure',
 
-    pipeline_failed: 'pipeline_failed'
+    BubbleRecognitionFailure: "BubbleRecognitionFailure"
 }
 
-var plugin_nickname = 'romatora'
 var enabled = false;
 var location = Location.Undefined
 var listeners_by_type = {};
@@ -57,7 +60,7 @@ async function sendToActiveTab(event) {
     if (tab) {
         browser.tabs.sendMessage(tab.id, event);
     } else {
-        console.warn("Not found active tab to send to ", event)
+        logging.warn("Not found active tab to send to ", event)
     }
 }
 
@@ -68,7 +71,7 @@ async function sendToPluginBackground(event) {
 // local = true means it should not be sent from Background to Page or from Page to Background
 export async function fire(event, local) {
     if (enabled) {
-        event.nick = plugin_nickname
+        event.nick = APP_NAME
         onEvent(event);
         if (!local) {
             if (location === Location.Background) {
@@ -84,12 +87,12 @@ export async function fire(event, local) {
 async function onEvent(event) {
     if (enabled) {
         var nick = event.nick;
-        if (typeof nick !== 'undefined' && nick === plugin_nickname) {
+        if (typeof nick !== 'undefined' && nick === APP_NAME) {
             listeners_for_all.forEach(async listener => {
                 try {
                     await listener(event)
                 } catch(e) {
-                    console.error("romatora: listener failed to handle event", event, listener, e)
+                    logging.error("listener failed to handle event", event, listener, e)
                 }
             });
 
@@ -100,7 +103,7 @@ async function onEvent(event) {
                         try {
                             await listener(event)
                         } catch(e) {
-                            console.error("romatora: listener failed to handle event", event, listener, e)
+                            logging.error("listener failed to handle event", event, listener, e)
                         }   
                     }); 
                 }
@@ -120,14 +123,14 @@ export function addListener(listener, event_type) {
         if (index === -1) {
             type_listeners.push(listener);
         } else {
-            console.error('Failed to add listener. Listener for event type already added', listener, event_type)
+            logging.error('Failed to add listener. Listener for event type already added', listener, event_type)
         }
     } else {
         var index = listeners_for_all.indexOf(listener);
         if (index === -1) {
             listeners_for_all.push(listener);
         } else {
-            console.error('Failed to add listener. Listener already added', listener)
+            logging.error('Failed to add listener. Listener already added', listener)
         }
     }
 }

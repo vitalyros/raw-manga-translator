@@ -3,7 +3,6 @@ import * as events from './events'
 import {loggingForModule} from '../utils/logging'
 import {APP_ELEMENT_ID_PREFIX} from '../utils/const'
 
-const debug = true;
 const moduleName = 'bubble_recognition_opencv'
 const logging = loggingForModule(moduleName)
 var enabled = false;
@@ -135,13 +134,19 @@ function displayBubbleContour(src, contours, hierarchy, contourData, boundingRec
 function displayCroppedMask(croppedMask) {
   if (showCroppedMask) {
     initCroppedMaskCanvas()
+    const startDate = new Date()
     display(croppedMask, croppedMaskCanvas)
+    const endDate = new Date()
+    logging.debug("displayed cropped mask", endDate.getTime() - startDate.getTime()) 
   }
 }
 
 function displayOutput(output) {
   initOutputCanvas()
+  const startDate = new Date()
   display(output, outputCanvas)
+  const endDate = new Date()
+  logging.debug("displayed output", endDate.getTime() - startDate.getTime()) 
 }
 
 function readImage(image) {
@@ -166,7 +171,7 @@ function findContours(src) {
     const hierarchy = new cv.Mat();
     cv.cvtColor(src, tmp, cv.COLOR_RGBA2GRAY, 0);
     cv.threshold(tmp, tmp, 235, 255, cv.THRESH_BINARY);
-    cv.findContours(tmp, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+    cv.findContours(tmp, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_NONE);
     const endDate = new Date();
     if (contours.size() == 0) {
       logging.error("found 0 contours") 
@@ -365,31 +370,40 @@ function findSpeechBubble(image, x, y, area) {
       url: outputCanvas.toDataURL(),
       rect: boundingRect
     }
-  } finally {
+  }finally {
     // Do not remove src, contours and hierarchy cause they are in recent cache
     deleteCV(output)
   }
 }
 
+function fireBubbleRecognitionFalure(event) {
+  events.fire({
+    type: events.EventTypes.BubbleRecognitionFailure,
+    from: moduleName,
+    data: {
+      box: {
+        x_scrolled: event.data.pageX,
+        x_visible: event.data.clientX,
+        y_scrolled: event.data.pageY,
+        y_visible: event.data.clientY,
+        width: 0,
+        height: 0
+      }
+    }
+  })
+}
 
 function onImagesClicked(event) {
   try {
     logging.debug("onImagesClicked called", event);
-    const images = event.data.images;
-    // Just take the first image for now
-    const image = images[0];
-    const imageRect = image.getBoundingClientRect()
-    const imageX = event.data.clientX - imageRect.x
-    const imageY = event.data.clientY - imageRect.y
-    const imageScrollX = window.scrollX + imageRect.x
-    const imageScrollY = window.scrollY + imageRect.y
-    logging.debug("onImagesClicked image", image, imageX, imageY);
-    const bubble = findSpeechBubble(image, imageX, imageY, image.width * image.height);
+    const image = event.data.image;
+    const imageRect = event.data.imageRect
+    const bubble = findSpeechBubble(image, event.data.imageX, event.data.imageY, image.width * image.height);
     if (bubble) {
       var box = {
-        x_scrolled: imageScrollX + bubble.rect.x,
+        x_scrolled: imageRect.pageX + bubble.rect.x,
         x_visible: imageRect.x + bubble.rect.x,
-        y_scrolled: imageScrollY + bubble.rect.y,
+        y_scrolled: imageRect.pageY + bubble.rect.y,
         y_visible: imageRect.y + bubble.rect.y,
         width: bubble.rect.width,
         height: bubble.rect.height
@@ -402,10 +416,13 @@ function onImagesClicked(event) {
             image_uri: bubble.url
         }
       });
+    } else {
+      fireBubbleRecognitionFalure(event)
     }
     logging.debug("onImagesClicked success", event);
   } catch (e) {
     logging.error("onImagesClicked failed", event, e);
+    fireBubbleRecognitionFalure(event)
   }
 }
 

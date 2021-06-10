@@ -28,15 +28,8 @@
         var bubble_recognition = require("./modules/bubble_recognition_opencv.js")
         await bubble_recognition.enable();
 
-        var image_click = require('./modules/image_click.js');
-        await image_click.enable();
-
         var area_selection = require('./modules/area_selection.js');
         await area_selection.enable();
-
-        var selection_mode = require("./modules/selection_mode.js")
-        await selection_mode.enable();
-
     } catch (e) {
         console.error("romatora initialization error", e)
     }

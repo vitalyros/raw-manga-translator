@@ -8,6 +8,10 @@ export function error(...args) {
     console.error(APP_NAME, ...args)
 }
 
+export function warn(...args) {
+    console.error(APP_NAME, ...args)
+}
+
 export function debug(...args) {
     if (debugEnabled) {
         console.debug(APP_NAME, ...args)
@@ -17,6 +21,7 @@ export function debug(...args) {
 export function loggingForModule(moduleName) {
     return {
         error: (...args) => error(moduleName, ...args),
+        warn: (...args) => warn(moduleName, ...args),
         debug: (...args) => debug(moduleName, ...args),
     }
 }
