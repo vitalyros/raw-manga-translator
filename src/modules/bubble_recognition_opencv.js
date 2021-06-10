@@ -12,12 +12,15 @@ const showBubbleContour = false;
 const showCroppedMask = false;
 const showOutput = false;
 
+var useCache = false;
 var cache;
 
 let CONTOUR_COLOR = new cv.Scalar(255, 0, 0, 255);
 let RECTANGLE_COLOR = new cv.Scalar(0, 0, 255, 255);
 let WHITE = new cv.Scalar(255,255,255,255)
 let BLACK = new cv.Scalar(0,0,0,255)
+
+let FORMAT = cv.CV_8UC4;
 
 var allContoursCanvas;
 var bubbleContourCanvas;
@@ -65,17 +68,80 @@ function initOutputCanvas() {
   }
 }
 
+// Crashes firefox
+// function display(src, canvas) {
+//   cv.imshow(canvas, src)
+// }
+
+// Crashes firefox
+// function display(src, canvas) {
+//   canvas.width = src.cols;
+//   canvas.height = src.rows;
+//   let arr = new Uint8ClampedArray(dst.data, dst.cols, dst.rows)
+//   let imdata = new ImageData(arr, dst.cols, dst.rows);
+//   const ctx = canvas.getContext('2d');
+//   ctx.putImageData(imdata, 0, 0);
+//   dst.delete()
+// }
+
+// Access forbidden
+// function display(src, canvas) {
+//   canvas.width = src.cols;
+//   canvas.height = src.rows;
+//   let arr = new Uint8ClampedArray(src.data, src.cols, src.rows)
+//   let imdata = new ImageData(arr, src.cols, src.rows);
+//   const ctx = canvas.getContext('2d');
+//   const ctxImageData = ctx.createImageData(src.cols, src.rows);
+//   ctxImageData.data.set(imdata.data)
+//   ctx.putImageData(ctxImageData, 0, 0);
+// }
+
+
+// Uses putImageData copied from Firefox documentation
+// function display(src, canvas) {
+//   canvas.width = src.cols;
+//   canvas.height = src.rows;
+//   let arr = new Uint8ClampedArray(src.data, src.cols, src.rows)
+//   let imdata = new ImageData(arr, src.cols, src.rows);
+//   const ctx = canvas.getContext('2d');
+//   putImageData(ctx, imdata, 0, 0);
+// }
+
+// Copied from documentation on putImageData for firefox
+// function putImageData(ctx, imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
+//   let data = imageData.data;
+//   let height = imageData.height;
+//   let width = imageData.width;
+//   dirtyX = dirtyX || 0;
+//   dirtyY = dirtyY || 0;
+//   dirtyWidth = dirtyWidth !== undefined? dirtyWidth: width;
+//   dirtyHeight = dirtyHeight !== undefined? dirtyHeight: height;
+//   let limitBottom = dirtyY + dirtyHeight;
+//   let limitRight = dirtyX + dirtyWidth;
+//   for (let y = dirtyY; y < limitBottom; y++) {
+//     for (let x = dirtyX; x < limitRight; x++) {
+//       var pos = y * width + x;
+//       ctx.fillStyle = `rgba(${data[pos*4+0]},${data[pos*4+1]},${data[pos*4+2]},${(data[pos*4+3]/255)})`;
+//       ctx.fillRect(x + dx, y + dy, 1, 1);
+//     }
+//   }
+// }
+
+// The fastest
 function display(src, canvas) {
   canvas.width = src.cols;
   canvas.height = src.rows;
   let arr = new Uint8ClampedArray(src.data, src.cols, src.rows)
-  let imdata = new ImageData(arr, src.cols, src.rows);
+  let srcImdata = new ImageData(arr, src.cols, src.rows);
   const ctx = canvas.getContext('2d');
-  const imageData = ctx.createImageData(src.cols, src.rows);
-  for (let i = 0; i < imdata.data.length; i += 1) {
-    imageData.data[i] = imdata.data[i];
+  const ctxImageData = ctx.createImageData(src.cols, src.rows);
+  const outData = ctxImageData.data
+  const srcData = srcImdata.data
+  const length = srcData.length
+  for (let i = 0; i < length; i += 1) {
+    outData[i] = srcData[i];
   }
-  ctx.putImageData(imageData, 0, 0);
+  ctx.putImageData(ctxImageData, 0, 0);
 }
 
 function displayAllContours(src, contours, hierarchy) {
@@ -197,13 +263,13 @@ function cropContour(src, contours, hierarchy, contourData, boundingRect) {
   var srcCrop;
   try { 
     const startDate = new Date()
-    mask = new cv.Mat(src.rows, src.cols, cv.CV_8UC4);
+    mask = new cv.Mat(src.rows, src.cols, FORMAT);
     mask.setTo(BLACK);
     cv.drawContours(mask, contours, contourData.index, WHITE, cv.FILLED, cv.LINE_8, hierarchy, 0);
     const maskDate = new Date()
     logging.debug("created mask", mask, maskDate.getTime() - startDate.getTime())
 
-    maskCrop = new cv.Mat(boundingRect.height, boundingRect.width, cv.CV_8UC4);
+    maskCrop = new cv.Mat(boundingRect.height, boundingRect.width, FORMAT);
     maskRoi = mask.roi(boundingRect)
     maskRoi.copyTo(maskCrop);
     const maskCropDate = new Date()
@@ -211,8 +277,8 @@ function cropContour(src, contours, hierarchy, contourData, boundingRect) {
     logging.debug("cropped mask", maskRoi, maskCrop, maskCropDate.getTime() - maskDate.getTime())
 
 
-    srcCrop = new cv.Mat(boundingRect.height, boundingRect.width, cv.CV_8UC4);
-    srcCrop.setTo(new cv.Scalar(255,255,255,255));
+    srcCrop = new cv.Mat(boundingRect.height, boundingRect.width, FORMAT);
+    srcCrop.setTo(WHITE);
     srcRoi = src.roi(boundingRect);
     srcRoi.copyTo(srcCrop, maskRoi);
     const srcCropDate = new Date()
@@ -320,7 +386,7 @@ function findSpeechBubble(image, x, y, area) {
   var boundingRect;
   var output;
   try {
-    if (cache && cache.image === image) {
+    if (useCache && cache && cache.image === image) {
       // Use data from recent cache
       src = cache.src
       contours = cache.contours
