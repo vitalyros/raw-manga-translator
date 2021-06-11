@@ -645,6 +645,12 @@ function fireBubbleRecognitionFalure(event) {
     type: events.EventTypes.BubbleRecognitionFailure,
     from: moduleName,
     data: {
+      point: {
+        pageX: event.pageX,
+        pageY: event.pageY,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      },
       box: {
         x_scrolled: event.data.pageX,
         x_visible: event.data.clientX,
@@ -676,6 +682,7 @@ function onImagesClicked(event) {
         from: moduleName,
         type: events.EventTypes.ImageCaptureSuccess,
         data: {
+            point: event.data.point, 
             box: box,
             image_uri: bubble.url
         }

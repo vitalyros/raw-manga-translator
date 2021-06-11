@@ -61,6 +61,7 @@ async function onImageCaptured(event) {
                 type: events.EventTypes.RecognitionStart,
                 from: module_name,
                 data: {
+                    point: event.data.point,
                     box: event.data.box,
                     recognitionMetrics: startMetrics,
                 }
@@ -79,6 +80,7 @@ async function onImageCaptured(event) {
                 type: events.EventTypes.RecognitionSuccess,
                 from: module_name,
                 data: {
+                    point: event.data.point,
                     box: event.data.box,
                     image_uri: event.data.image_uri,
                     ocr_result: ocr_result,
@@ -91,6 +93,7 @@ async function onImageCaptured(event) {
                 from: module_name,
                 type: events.EventTypes.RecognitionFailure, 
                 data: {
+                    point: event.data.point,
                     box: event.data.box,
                     image_uri: event.data.image_uri,
                 }

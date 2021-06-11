@@ -20,6 +20,7 @@ async function onAreaSelected(message) {
             from: module_name,
             type: events.EventTypes.ImageCaptureSuccess,
             data: {
+                point: message.data.point,
                 box: box,
                 image_uri: image_uri
             }

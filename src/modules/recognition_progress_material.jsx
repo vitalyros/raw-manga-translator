@@ -42,15 +42,18 @@ function RecognitionProgress(props) {
   const [shown, setShown] = useState(false)
   const [progress, setProgress] = useState(0.0)
   const onRecognitionStart = async (event) => {
-    var positionOffset = 10;
-    var positionThreshold = 60;
-    var baseY = event.data.box.y_visible + event.data.box.height + positionOffset
-    var baseX = event.data.box.x_visible + event.data.box.width + positionOffset;
-    if (baseX > document.body.clientWidth - positionThreshold) {
-      baseX = document.body.clientWidth - positionThreshold
+    const point = event.data.point;
+    const positionOffset = 10;
+    const positionThreshold = 60;
+    var baseX = point.pageX + positionOffset
+    var baseY = point.pageY + positionOffset
+    var fixX = window.innerWidth - point.clientX - positionOffset - positionThreshold 
+    var fixY = window.innerHeight - point.clientY - positionOffset - positionThreshold
+    if (fixX < 0) {
+      baseX = baseX + fixX
     }
-    if (baseY > document.body.clientHeight - positionThreshold) {
-      baseY = document.body.clientHeight - positionThreshold
+    if (fixY < 0) {
+      baseY = baseY + fixY
     }
     setBaseZoom(getCurrentZoom())
     setPosition({ x: baseX, y: baseY})
@@ -93,7 +96,7 @@ function RecognitionProgress(props) {
   const classes = makeStyles({ 
     recognition_progress_box: {
       display: "inline-flex",
-      position: 'fixed',
+      position: 'absolute',
       left: `${adjustedPosition.x}px`,
       top: `${adjustedPosition.y}px`,
       zIndex: 1501,

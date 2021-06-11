@@ -214,13 +214,19 @@ export function onMouseUp(event) {
             scrollY = window.scrollY
             endX = event.pageX;
             endY = event.pageY
-            var x_scrolled = selectionDivUpperCornerX();
-            var y_scrolled = selectionDivUpperCornerY();
-            var x_visible = x_scrolled - scrollX;
-            var y_visible = y_scrolled - scrollY;
-            var width = selectionDivWidth();
-            var height = selectionDivHeight();
-            var box = {
+            const x_scrolled = selectionDivUpperCornerX();
+            const y_scrolled = selectionDivUpperCornerY();
+            const x_visible = x_scrolled - scrollX;
+            const y_visible = y_scrolled - scrollY;
+            const width = selectionDivWidth();
+            const height = selectionDivHeight();
+            const point = {
+                pageX: event.pageX,
+                pageY: event.pageY,
+                clientX: event.clientX,
+                clientY: event.clientY,
+            }
+            const box = {
                 x_scrolled: x_scrolled + borderWidth,
                 y_scrolled: y_scrolled + borderWidth,
                 x_visible: x_visible + borderWidth,
@@ -233,6 +239,7 @@ export function onMouseUp(event) {
                     type: events.EventTypes.SelectAreaSuccess,
                     from: moduleName,
                     data: {
+                        point: point,
                         box: box
                     }
                 })
@@ -250,12 +257,9 @@ export function onMouseUp(event) {
                             from: moduleName,
                             type: events.EventTypes.ImagesClicked,
                             data: {
+                                point: point,
                                 image: image,
                                 imageRect: imageRect,
-                                clientX: event.clientX,
-                                clientY: event.clientY,
-                                pageX: event.pageX,
-                                pageY: event.pageY,
                                 imageX: event.clientX - imageRect.x,
                                 imageY: event.clientY - imageRect.y
                             }
