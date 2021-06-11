@@ -7,21 +7,46 @@ const moduleName = 'bubble_recognition_opencv'
 const logging = loggingForModule(moduleName)
 var enabled = false;
 
+// grayMode
+// true: Do mask manipulation with gray version of the image, transform to RGBA on output 
+// false: Do mask manipulation with RBGA image, no transformation on output
+const grayMode = true; 
+
+// Show preprocessed image that is fed to the contour finding algorythm
+const showContourSource = false;
+// Show original image with all contours on it. Do not use when the contour count is high, it's going to be extremely slow
 const showAllContours = false;
+const showAllContoursLimit = 10000;
+// Show original image with contour that we consider a found bubble
 const showBubbleContour = false;
+// Show cropped image with the bubble
 const showCroppedMask = false;
+// Show filtered bubble contents - the output of this module
 const showOutput = false;
 
-var useCache = false;
+// Cache image source, its grayscale version, contours and hierarchy
+var useCache = true;
 var cache;
 
-let CONTOUR_COLOR = new cv.Scalar(255, 0, 0, 255);
-let RECTANGLE_COLOR = new cv.Scalar(0, 0, 255, 255);
-let WHITE = new cv.Scalar(255,255,255,255)
-let BLACK = new cv.Scalar(0,0,0,255)
+const CONTOUR_COLOR = new cv.Scalar(255, 0, 0, 255);
+const RECTANGLE_COLOR = new cv.Scalar(0, 0, 255, 255);
+const WHITE = new cv.Scalar(255);
+const BLACK = new cv.Scalar(0);
 
-let FORMAT = cv.CV_8UC4;
 
+// Configurations for preprocessing of the image before contour finding algorithm 
+// Those might work better or worse depending on the processed image - the darkness of  the contrast and darkness of its edges and its textures
+
+// The side of blure rectangle
+// 3 would be rather small, 10 would be much, 20 - very much
+const CP_BLUR_SIDE = 10;
+// Half hypothenuse is the maximum influence distance of blur
+const CP_BLUR_HALF_HYPOTENUSE = Math.sqrt(CP_BLUR_SIDE * CP_BLUR_SIDE * 2) / 2
+// The treshold value that turns gray colors into black. 
+// It will be really bad if it is darker than the whitespace of the image or lighter than the edges of the bubble after the blur is applied. This might be the case with bad quality scans.
+const CP_THRESHOLD_VALUE = 235
+
+var contourSourceCanvas;
 var allContoursCanvas;
 var bubbleContourCanvas;
 var croppedMaskCanvas;
@@ -31,6 +56,14 @@ var outputCanvas;
 function deleteCV(resource) {
   if (resource) {
     resource.delete()
+  }
+}
+
+function initContourSourceCanvas() {
+  if (!contourSourceCanvas) {
+    contourSourceCanvas = document.createElement('canvas');
+    contourSourceCanvas.id = `${APP_ELEMENT_ID_PREFIX}_contourSourceCanvas`;
+    document.body.appendChild(contourSourceCanvas);
   }
 }
 
@@ -127,19 +160,54 @@ function initOutputCanvas() {
 //   }
 // }
 
-// The fastest
-function display(src, canvas) {
+// Fast but has unnecessary transformation of src to ImageData
+// function display(src, canvas, gray = false) {
+//   canvas.width = src.cols;
+//   canvas.height = src.rows;
+//   let arr = new Uint8ClampedArray(src.data, src.cols, src.rows)
+//   let srcImdata = new ImageData(arr, src.cols, src.rows);
+//   const ctx = canvas.getContext('2d');
+//   const ctxImageData = ctx.createImageData(src.cols, src.rows);
+//   const outData = ctxImageData.data
+//   const srcData = srcImdata.data
+//   const length = srcData.length
+//   if (gray) {
+//     for (let i = 0; i < length; i += 1) {
+//       outData[i * 4] = srcData[i];
+//       outData[i * 4 + 1] = srcData[i];
+//       outData[i * 4 + 2] = srcData[i];
+//       outData[i * 4 + 3] = 255;
+//     }
+//   } else {
+//     for (let i = 0; i < length; i += 1) {
+//       outData[i] = srcData[i];
+//     }
+//   }
+//   ctx.putImageData(ctxImageData, 0, 0);
+// }
+
+function display(src, canvas, gray = false) {
   canvas.width = src.cols;
   canvas.height = src.rows;
-  let arr = new Uint8ClampedArray(src.data, src.cols, src.rows)
-  let srcImdata = new ImageData(arr, src.cols, src.rows);
+  const srcData = src.data;
   const ctx = canvas.getContext('2d');
   const ctxImageData = ctx.createImageData(src.cols, src.rows);
   const outData = ctxImageData.data
-  const srcData = srcImdata.data
   const length = srcData.length
-  for (let i = 0; i < length; i += 1) {
-    outData[i] = srcData[i];
+  if (gray) {
+    // src is one byte per pixel (gray8), canvas is four bytes per pixel (RGBA8)
+    for (let i = 0, j = 0; i < length; i += 1, j += 4) {
+      let srcByte = srcData[i];
+      outData[j] = srcByte;
+      outData[j + 1] = srcByte;
+      outData[j + 2] = srcByte;
+      outData[j + 3] = 255; // Non transparent
+    }
+  } else {
+    // Both src and canvas are four bytes per pixel bixel (RGBA8)
+    for (let i = 0; i < length; i += 1) {
+      outData[i] = srcData[i];
+    }
   }
   ctx.putImageData(ctxImageData, 0, 0);
 }
@@ -148,6 +216,10 @@ function displayAllContours(src, contours, hierarchy) {
   if (showAllContours) {
     var clone;
     try {
+      if (contours.size() > showAllContoursLimit) {
+        logging.warn("Skipped display all contours. Too much contours", contours.size(), showAllContoursLimit)
+        return
+      }
       const startDate = new Date()
       clone = src.clone()
       for (let i = 0; i < contours.size(); ++i) {
@@ -197,22 +269,46 @@ function displayBubbleContour(src, contours, hierarchy, contourData, boundingRec
   }
 }
 
+function displayContourSource(src) {
+  if (showContourSource) {
+    const startDate = new Date()
+    initContourSourceCanvas()
+    display(src, contourSourceCanvas, true) // contour sourse is alway grayscale
+    const endDate = new Date()
+    logging.debug("displayed contour source", endDate.getTime() - startDate.getTime()) 
+  }
+}
+
 function displayCroppedMask(croppedMask) {
   if (showCroppedMask) {
-    initCroppedMaskCanvas()
     const startDate = new Date()
-    display(croppedMask, croppedMaskCanvas)
+    initCroppedMaskCanvas()
+    display(croppedMask, croppedMaskCanvas, grayMode)
     const endDate = new Date()
     logging.debug("displayed cropped mask", endDate.getTime() - startDate.getTime()) 
   }
 }
 
 function displayOutput(output) {
-  initOutputCanvas()
   const startDate = new Date()
-  display(output, outputCanvas)
+  initOutputCanvas();
+  display(output, outputCanvas, grayMode)
   const endDate = new Date()
   logging.debug("displayed output", endDate.getTime() - startDate.getTime()) 
+}
+
+function convertToGray(src) {
+  try {
+    const startDate = new Date();
+    const gray = new cv.Mat();
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+    const endDate = new Date();
+    logging.debug("converted to gray", gray, endDate.getTime() - startDate.getTime());
+    return gray;
+  } catch (e) {
+    console.error("failed convert to gray", src, e);
+    return null;
+  }
 }
 
 function readImage(image) {
@@ -220,37 +316,108 @@ function readImage(image) {
     const startDate = new Date();
     const src = cv.imread(image);
     const endDate = new Date();
-    logging.debug("image read", src, image, endDate.getTime() - startDate.getTime())
-    return src
+    logging.debug("image read", src, image, endDate.getTime() - startDate.getTime());
+    return src;
   } catch (e) {
-    console.error("failed to read src image", image, e)
-    return null
+    console.error("failed to read src image", image, e);
+    return null;
   }
 }
 
-function findContours(src) {
-  var tmp;
+// Test purposes only
+function findContoursPreprocessing_none(srcGray) {
+  return srcGray.clone()
+}
+
+// The fastes and the most simple, works good with good quality scans
+// Works horribly with bad quality scans
+function findContoursPreprocessing_simpleBlurSimpleThreshold(srcGray) {
+  const startDate = new Date();
+  const result = new cv.Mat();
+  const ksize = new cv.Size(CP_BLUR_SIDE, CP_BLUR_SIDE);
+  const anchor = new cv.Point(-1, -1);
+  cv.boxFilter(srcGray, result, -1, ksize, anchor, true, cv.BORDER_DEFAULT);
+  const blurDate = new Date();
+  logging.debug("contour prerocessing: siple blur", blurDate.getTime() - startDate.getTime())
+  cv.threshold(result, result, CP_THRESHOLD_VALUE, 255, cv.THRESH_BINARY);
+  const thresholdData = new Date();
+  logging.debug("contour prerocessing: simple threshold", thresholdData.getTime() - blurDate.getTime())
+  return result
+}
+
+// Gaussian blur is about three times slower, but better at noise removal
+function findContoursPreprocessing_gaussianBlurSimpleThreshold(srcGray) {
+  const startDate = new Date();
+  const result = new cv.Mat();
+  const blurSide = CP_BLUR_SIDE % 2 == 1 ? CP_BLUR_SIDE : CP_BLUR_SIDE + 1; // Blur side can only be uneven for gaussian blur
+  const ksize = new cv.Size(blurSide, blurSide);
+  cv.GaussianBlur(srcGray, result, ksize, 0, 0, cv.BORDER_DEFAULT);
+  const blurDate = new Date();
+  logging.debug("contour prerocessing: gaussian blur", blurDate.getTime() - startDate.getTime())
+  cv.threshold(result, result, CP_THRESHOLD_VALUE, 255, cv.THRESH_BINARY);
+  const thresholdData = new Date();
+  logging.debug("contour prerocessing: simple threshold", thresholdData.getTime() - blurDate.getTime())
+  return result
+}
+
+// Kinda whitens the picture, but great texture removal, probably better with bad quality scans
+function findContoursPreprocessing_gausianBlurOtsuThresholding(srcGray) {
+  const startDate = new Date();
+  const result = new cv.Mat();
+  const blurSide = CP_BLUR_SIDE % 2 == 1 ? CP_BLUR_SIDE : CP_BLUR_SIDE + 1; // Blur side can only be uneven for gaussian blur
+  const ksize = new cv.Size(blurSide, blurSide);
+  cv.GaussianBlur(srcGray, result, ksize, 0, 0, cv.BORDER_DEFAULT);
+  const blurDate = new Date();
+  logging.debug("contour prerocessing: gaussian blur", blurDate.getTime() - startDate.getTime())
+  cv.threshold(result, result, CP_THRESHOLD_VALUE, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+  const thresholdData = new Date();
+  logging.debug("contour prerocessing: otsu threshold", thresholdData.getTime() - blurDate.getTime())
+  return result
+}
+
+// Does not remove textures at all, instead makes them fine
+// May be the best for bad quality scans with darker whitespase and worse contrast overall
+function findContoursPreprocessing_simpleBlurAdaptiveGaussianThresholding(srcGray) {
+  const startDate = new Date();
+  const result = new cv.Mat();
+  const ksize = new cv.Size(CP_BLUR_SIDE, CP_BLUR_SIDE);
+  const anchor = new cv.Point(-1, -1);
+  cv.boxFilter(srcGray, result, -1, ksize, anchor, true, cv.BORDER_DEFAULT);
+  const blurDate = new Date();
+  logging.debug("contour prerocessing: simple blur", blurDate.getTime() - startDate.getTime())
+  // logging.debug("contour prerocessing: simple blur", blurDate.getTime() - startDate.getTime())
+  cv.adaptiveThreshold(srcGray, result, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2)
+  const thresholdData = new Date();
+  logging.debug("contour prerocessing: adaptive gaussian threshold", thresholdData.getTime() - blurDate.getTime())
+  return result
+}
+
+const findContoursPreprocessing = (srcGray) => findContoursPreprocessing_gaussianBlurSimpleThreshold(srcGray)
+
+
+function findContours(srcGray) {
+  var srcPrep;
   try {
     const startDate = new Date();
-    tmp = new cv.Mat();
     const contours = new cv.MatVector();
     const hierarchy = new cv.Mat();
-    cv.cvtColor(src, tmp, cv.COLOR_RGBA2GRAY, 0);
-    cv.threshold(tmp, tmp, 235, 255, cv.THRESH_BINARY);
-    cv.findContours(tmp, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_NONE);
+    srcPrep = findContoursPreprocessing(srcGray)
+    const prepDate = new Date();
+    cv.findContours(srcPrep, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_NONE);
     const endDate = new Date();
+    displayContourSource(srcPrep);
     if (contours.size() == 0) {
-      logging.error("found 0 contours") 
+      logging.error("found 0 contours", endDate.getTime() - prepDate.getTime(), endDate.getTime() - startDate.getTime()) 
       return null
     } else {
-      logging.debug("found contours", contours.size(), contours, hierarchy, endDate.getTime() - startDate.getTime())
+      logging.debug("found contours", contours.size(), contours, hierarchy, endDate.getTime() - prepDate.getTime(), endDate.getTime() - startDate.getTime())
       return {contours: contours, hierarchy: hierarchy}
     }
   } catch(e) {
     logging.error("failed to find contours", e) 
     return null;
   } finally {
-    deleteCV(tmp)
+    deleteCV(srcPrep)
   }
 }
 
@@ -263,13 +430,13 @@ function cropContour(src, contours, hierarchy, contourData, boundingRect) {
   var srcCrop;
   try { 
     const startDate = new Date()
-    mask = new cv.Mat(src.rows, src.cols, FORMAT);
+    mask = new cv.Mat(src.rows, src.cols, cv.CV_8UC1);
     mask.setTo(BLACK);
     cv.drawContours(mask, contours, contourData.index, WHITE, cv.FILLED, cv.LINE_8, hierarchy, 0);
     const maskDate = new Date()
     logging.debug("created mask", mask, maskDate.getTime() - startDate.getTime())
 
-    maskCrop = new cv.Mat(boundingRect.height, boundingRect.width, FORMAT);
+    maskCrop = new cv.Mat(boundingRect.height, boundingRect.width, cv.CV_8UC1);
     maskRoi = mask.roi(boundingRect)
     maskRoi.copyTo(maskCrop);
     const maskCropDate = new Date()
@@ -277,15 +444,15 @@ function cropContour(src, contours, hierarchy, contourData, boundingRect) {
     logging.debug("cropped mask", maskRoi, maskCrop, maskCropDate.getTime() - maskDate.getTime())
 
 
-    srcCrop = new cv.Mat(boundingRect.height, boundingRect.width, FORMAT);
+    srcCrop = new cv.Mat(boundingRect.height, boundingRect.width, cv.CV_8UC1);
     srcCrop.setTo(WHITE);
     srcRoi = src.roi(boundingRect);
     srcRoi.copyTo(srcCrop, maskRoi);
     const srcCropDate = new Date()
-    logging.debug("cropped conour", srcRoi, srcCrop, srcCropDate.getTime() - maskCropDate.getTime(), srcCropDate.getTime() - startDate.getTime())
+    logging.debug("cropped contour", srcRoi, srcCrop, srcCropDate.getTime() - maskCropDate.getTime(), srcCropDate.getTime() - startDate.getTime())
     return srcCrop;
   } catch (e) {
-    logging.debug("failed to crop conour", e)
+    logging.debug("failed to crop contour", e)
     return null;
   } finally {
     // Delete everything except for srcCrop which is our result
@@ -326,9 +493,11 @@ function BubbleFinder(imageArea, contours, hierarchy) {
   }
 
   this.filterContainingPoint = (x, y) => {
+    // adjustment for possible preprocessing blur influence
+    let maxDistance = -1 * CP_BLUR_HALF_HYPOTENUSE
     this.dataList = this.dataList.filter((contourData) => {
       // Include if point is on the contour
-      return cv.pointPolygonTest(contourData.contour, new cv.Point(x, y), true) >= 0;
+      return cv.pointPolygonTest(contourData.contour, new cv.Point(x, y), true) >= maxDistance;
     });
     return this;
   }
@@ -364,7 +533,7 @@ function BubbleFinder(imageArea, contours, hierarchy) {
       .filterContoursBySize(1000, this.imageArea /4)
       .filterContainingPoint(clickX, clickY)
       .selectSmallest();
-      var endDate = new Date();
+      const endDate = new Date();
       if (!result) {
         logging.error("failed to find bubble contour, result is falsey")
       } else {
@@ -381,14 +550,17 @@ function BubbleFinder(imageArea, contours, hierarchy) {
 
 function findSpeechBubble(image, x, y, area) {
   var src;
+  var srcGray;
   var contours;
   var hierarchy;
   var boundingRect;
   var output;
   try {
+    const startDate = new Date();
     if (useCache && cache && cache.image === image) {
       // Use data from recent cache
       src = cache.src
+      srcGray = cache.srcGray
       contours = cache.contours
       hierarchy = cache.hierarchy
       console.log("cache loaded", cache)
@@ -398,29 +570,42 @@ function findSpeechBubble(image, x, y, area) {
         deleteCV(cache.src)
         deleteCV(cache.contours)
         deleteCV(cache.hierarchy)
+        deleteCV(cache.srcGray)
         console.log("cache invalidated", cache)
         cache = null;
       }
 
       // Load new data
       src = readImage(image);
-      let contoursAndHiearchy = findContours(src)
+
+      // Convert to gray
+      srcGray = convertToGray(src)
+      if (!srcGray) {
+        deleteCV(src)
+        return null
+      }
+
+      let contoursAndHiearchy = findContours(srcGray)
       if (!contoursAndHiearchy) {
         // In src read but hierarchy and contours not found, src needs to be deleted
         deleteCV(src)
+        deleteCV(srcGray)
         return null
       }
       contours = contoursAndHiearchy.contours;
       hierarchy = contoursAndHiearchy.hierarchy;
 
       // Save recent cache
-      cache = {
-        image: image,
-        src: src,
-        hierarchy: hierarchy,
-        contours: contours
+      if (useCache) {
+        cache = {
+          image: image,
+          src: src,
+          srcGray: srcGray,
+          hierarchy: hierarchy,
+          contours: contours
+        }
+        console.log("cache saved", cache)
       }
-      console.log("cache saved", cache)
     }
     displayAllContours(src, contours, hierarchy)
     let bubbleFinder = new BubbleFinder(area, contours, hierarchy)
@@ -430,15 +615,28 @@ function findSpeechBubble(image, x, y, area) {
     }
     boundingRect = cv.boundingRect(bubbleData.contour)
     displayBubbleContour(src, contours, hierarchy, bubbleData, boundingRect)
-    output = cropContour(src, contours, hierarchy, bubbleData, boundingRect)
-    displayOutput(output)
-    return {
+    if (grayMode) {
+      output = cropContour(srcGray, contours, hierarchy, bubbleData, boundingRect)
+    } else {
+      output = cropContour(src, contours, hierarchy, bubbleData, boundingRect)
+    }
+    displayOutput(output);
+    const result = {
       url: outputCanvas.toDataURL(),
       rect: boundingRect
-    }
-  }finally {
-    // Do not remove src, contours and hierarchy cause they are in recent cache
+    };
+    const endDate = new Date();
+    logging.debug("found bubble", result, endDate.getTime() - startDate.getTime());
+    return result;
+  } finally {
     deleteCV(output)
+    // Do not remove src, srcGray, contours and hierarchy if they are in cache
+    if (!useCache) {
+      deleteCV(src)
+      deleteCV(contours)
+      deleteCV(hierarchy)
+      deleteCV(srcGray)
+    }
   }
 }
 

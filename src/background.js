@@ -24,8 +24,8 @@
         // var tab_scaling = require('./modules/tab_scaling.js')
         // await tab_scaling.enable()
 
-        var page_capture = require('./modules/page_capture_screenshot.js')
-        await page_capture.enable()
+        // var page_capture = require('./modules/page_capture_screenshot.js')
+        // await page_capture.enable()
 
     } catch (e) {
         console.error("romatora initialization error", e)
