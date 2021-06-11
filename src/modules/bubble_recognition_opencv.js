@@ -547,6 +547,30 @@ function BubbleFinder(imageArea, contours, hierarchy) {
   }
 }
 
+function invalidateCache() {
+  if (cache) {
+    deleteCV(cache.src)
+    deleteCV(cache.contours)
+    deleteCV(cache.hierarchy)
+    deleteCV(cache.srcGray)
+    console.log("cache invalidated", cache)
+    cache = null;
+  }
+}
+
+function saveCache(image, src, srcGray, contours, hierarchy) {
+  if (useCache) {
+    cache = {
+      image: image,
+      src: src,
+      srcGray: srcGray,
+      contours: contours,
+      hierarchy: hierarchy
+    }
+    console.log("cache saved", cache)
+  }
+}
+
 
 function findSpeechBubble(image, x, y, area) {
   var src;
@@ -565,15 +589,7 @@ function findSpeechBubble(image, x, y, area) {
       hierarchy = cache.hierarchy
       console.log("cache loaded", cache)
     } else {
-      // Invalidate cache
-      if (cache) {
-        deleteCV(cache.src)
-        deleteCV(cache.contours)
-        deleteCV(cache.hierarchy)
-        deleteCV(cache.srcGray)
-        console.log("cache invalidated", cache)
-        cache = null;
-      }
+      invalidateCache()
 
       // Load new data
       src = readImage(image);
@@ -595,17 +611,7 @@ function findSpeechBubble(image, x, y, area) {
       contours = contoursAndHiearchy.contours;
       hierarchy = contoursAndHiearchy.hierarchy;
 
-      // Save recent cache
-      if (useCache) {
-        cache = {
-          image: image,
-          src: src,
-          srcGray: srcGray,
-          hierarchy: hierarchy,
-          contours: contours
-        }
-        console.log("cache saved", cache)
-      }
+      saveCache(image, src, srcGray, contours, hierarchy)
     }
     displayAllContours(src, contours, hierarchy)
     let bubbleFinder = new BubbleFinder(area, contours, hierarchy)
@@ -697,10 +703,15 @@ function onImagesClicked(event) {
   }
 }
 
+function onZoomChanged(event) {
+  invalidateCache()
+}
+
 
 export async function enable() {
     if (!enabled) {
         events.addListener(onImagesClicked, events.EventTypes.ImagesClicked);
+        window.addEventListener('resize', onZoomChanged)
         enabled = true;
     }
 }
@@ -708,6 +719,7 @@ export async function enable() {
 export async function disable() {
     if (enabled) {
         events.addListener(onImagesClicked, events.EventTypes.ImagesClicked);
+        window.removeEventListener('resize', onZoomChanged)
         enabled = false;
     }
 }
