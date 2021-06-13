@@ -28,6 +28,6 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
   - Click once again on the plugin icon in the firefox toolkit
   - Or left-click on the page to open the context menu and choose `Disable raw manga tranlation` 
 
-# License
+## License
 - All code in the `src` directory is under Apache License 2.0
 - All icons in the `icons` directory are under CC BY-SA 4.0
