@@ -6,7 +6,7 @@
         var message_logger = require('./modules/message_logger.js');
         await message_logger.enable();
 
-        var context_menu = require('./modules/context_menu.js');
+        var context_menu = require('./modules/selection_mode_activation.js');
         await context_menu.enable()
 
         var translation_stub = require('./modules/translation_stub.js');

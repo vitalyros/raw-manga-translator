@@ -4,3 +4,6 @@ test
 *.xpi
 
 stats.json
+
+*.png.*~
+*.kra.*~

@@ -18,7 +18,16 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
 - Install by firefox page `about:debugging` -> `This Firefox` -> `Load Temporary Addon` -> select raw-manga-translator-firefox-plugin.xpi file
 
 ## Using
-- Left-click on the page to open the context menu
-- Choose `Select area to translate`
-- Right-click and drag to select an area with text
-- To disable choose `Cancel area selecton` in left-click context menu
+- Enable translation mode in the tab with manga. 
+  - Click the plugin icon in the firefox toolkit
+  - Or left-click on the page to open the context menu and choose `Enable raw manga tranlation` 
+- Select a text bubble or a text area
+  - Right click a text bubble to translate it
+  - If the text is not in the bubble or the recontition failed - right click and drag to select an area with text
+- Do disable translation mode 
+  - Click once again on the plugin icon in the firefox toolkit
+  - Or left-click on the page to open the context menu and choose `Disable raw manga tranlation` 
+
+# License
+- All code in the `src` directory is under Apache License 2.0
+- All icons in the `icons` directory are under CC BY-SA 4.0
