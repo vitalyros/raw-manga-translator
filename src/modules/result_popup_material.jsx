@@ -1,5 +1,5 @@
 import * as events from './events';
-import * as logging from '../utils/logging';
+import { loggingForModule } from '../utils/logging';
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { makeStyles, useTheme } from '@material-ui/core';
@@ -29,7 +29,8 @@ import * as settings from '../utils/settings';
 import { theme } from '../themes/default.jsx';
 import _, { size } from "lodash";
 
-const module_name = 'result_popup';
+const moduleName = 'result_popup';
+const logging = loggingForModule(moduleName);
 
 var enabled = false;
 const wrapper_div_id = "romatora-translation-popup-wrapper"
@@ -72,10 +73,10 @@ class PaperComponent extends React.Component {
   }
   
   onDragStart(event, data) {
-    console.log("on drag start", data)
+    logging.debug("on drag start", data)
     events.fire({
       type: events.EventTypes.AreaSelectionExclusionZoneDragUpdate,
-      from: module_name,
+      from: moduleName,
       data: {
         dragged: true
       }
@@ -83,10 +84,10 @@ class PaperComponent extends React.Component {
   }
   
   onDragStop(event, data) {
-    console.log("on drag stop", data)
+    logging.debug("on drag stop", data)
     events.fire({
       type: events.EventTypes.AreaSelectionExclusionZoneDragUpdate,
-      from: module_name,
+      from: moduleName,
       data: {
         dragged: false
       }
@@ -157,7 +158,7 @@ class PaperComponent extends React.Component {
       if (eventData && !_.isEqual(eventData, this.state.lastReportedExclusionAreaEventData)) {
         events.fire({
           type: events.EventTypes.AreaSelectionExclusionZoneUpdate,
-          from: module_name,
+          from: moduleName,
           data: eventData
         });
         this.setState({
@@ -165,7 +166,7 @@ class PaperComponent extends React.Component {
         });
       }
     } catch(e) {
-      console.error("failed to fire exclusion zone update", this, e)
+      logging.error("failed to fire exclusion zone update", this, e)
     }
   }
 
@@ -233,7 +234,7 @@ function TranslationTool(props) {
       await new Promise(r => setTimeout(r, 500));
       events.fire({
         type: events.EventTypes.AccordionResized,
-        from: module_name,
+        from: moduleName,
         data: {}
       })
     })()
@@ -452,7 +453,7 @@ function TranslationDialog(props) {
       // todo: properly calculate expected dialog proportions instead of hardcoding them
       const fixCoordinate = (baseValue, maxValue, visibleValue, sizeEstimation, hardFix, name) => {
         var fix = maxValue - visibleValue - sizeEstimation;
-        console.log(`base ${name} fix. baseValue: ${baseValue}, visibleValue: ${visibleValue}, maxValue: ${maxValue}, sizeEstimation: ${sizeEstimation}, fix: ${fix}, hardfix: ${hardFix}`)
+        logging.debug(`base ${name} fix. baseValue: ${baseValue}, visibleValue: ${visibleValue}, maxValue: ${maxValue}, sizeEstimation: ${sizeEstimation}, fix: ${fix}, hardfix: ${hardFix}`)
         // Replase calculated fix with hardfix
         if (fix < 0 && hardFix && hardFix < 0 && visibleValue + hardFix > 0) {
           // Do not apply hardfix if it somehow modifies visibleValue to negative
@@ -526,7 +527,7 @@ function TranslationDialog(props) {
       if (textToTranslate && translationMethod && translationLanguage) {
         events.fire({
           type: events.EventTypes.TranslationRequested,
-          from: module_name,
+          from: moduleName,
           data: {
             translationMethod: translationMethod,
             translationLanguage: translationLanguage,
@@ -553,7 +554,7 @@ function TranslationDialog(props) {
     }
 
     const onTabZoomChanged = (event) => {
-      // console.log (`${(window.outerWidth - 10 ) / window.innerWidth}`)
+      // logging.debug (`${(window.outerWidth - 10 ) / window.innerWidth}`)
       // setZoom(event.data.newZoomFactor)
     }
 
@@ -767,7 +768,7 @@ function TranslationDialog(props) {
     }
 
     const onOriginalTextInput = (event) => {
-      console.log("New original text", event.target.value)
+      logging.debug("New original text", event.target.value)
       setOriginalText(event.target.value)
       if (translationRequestedAfterInput) {
         setTranslationRequestedAfterInput(false)
@@ -777,7 +778,7 @@ function TranslationDialog(props) {
 
     const onOriginalTextKeyDown = (event) => {
       if (event.keyCode == 13) {
-        console.log("Key code ENTER")
+        logging.debug("Key code ENTER")
         setTranslationRequestedAfterInput(true)
       }
     }
@@ -841,7 +842,7 @@ function TranslationDialog(props) {
       </ErrorBoundary>
     );
   } catch(e) {
-    console.error("failed to rendter dialog", e)
+    logging.error("failed to rendter dialog", e)
     return <div/>
   }
 }
@@ -858,7 +859,7 @@ async function lazyInitComponent() {
       var translationLanguage = await settings.getDefaultTranslationLanguage()
       dialog_component = await ReactDOM.render(<TranslationDialog translationMethod={translationMethod} translationLanguage={translationLanguage}/>, document.querySelector(`#${wrapper_div_id}`));
     } catch(e) {
-      console.error ("Failed to initialize popup", dialog_component, e)
+      logging.error ("Failed to initialize popup", dialog_component, e)
     }
   }
 }

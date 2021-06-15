@@ -1,20 +1,22 @@
 import * as events from "./events.js";
+import { loggingForModule } from '../utils/logging'
 
 var enabled = false;
 var word_hocr_wrapper_div = null
 var line_hocr_wrapper_div = null
 var image = null
+const logging = loggingForModule("hocr_display")
 
 function markHocrElement(element, bbox_start_index, border, border_offset, color) {
-    console.log("element", element)
+    logging.debug("element", element)
     var i = bbox_start_index
     var arr = element.title.split(" ");
-    console.log(`bbox ${arr[i]} ${arr[i + 1]} ${arr[i + 2]} ${arr[i + 3]}`)
+    logging.debug(`bbox ${arr[i]} ${arr[i + 1]} ${arr[i + 2]} ${arr[i + 3]}`)
     var left = parseInt(arr[i])
     var top = parseInt(arr[i + 1])
     var right = parseInt(arr[i + 2])
     var bottom = parseInt(arr[i + 3])
-    console.log(`bbox parsed ${left} ${top} ${right} ${bottom}`)
+    logging.debug(`bbox parsed ${left} ${top} ${right} ${bottom}`)
     var width = right - left;
     var height = bottom - top;
     element.style.position = "absolute";
@@ -70,7 +72,7 @@ export async function onTextRecognized(event) {
         line_hocr_wrapper_div.innerHTML = ocr_result.data.hocr;
         markHocrElements(line_hocr_wrapper_div, 'ocrx_word', 1, "2px solid green", 0, "green");
     } catch (e) {
-        logError("onTextRecognized", message, e)
+        logging.error("onTextRecognized", message, e)
     }
 }
 

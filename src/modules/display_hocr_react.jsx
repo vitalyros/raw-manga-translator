@@ -1,7 +1,10 @@
 import { Paper } from '@material-ui/core';
+import { loggingForModule } from '../utils/logging'
 import React from 'react';
 
-var ElementType = {
+const logging = loggingForModule('display_hocr_react')
+
+const ElementType = {
     Page: { name: "page", className: "ocr_page", bboxOffset: 3, order: 1 },
     Area: { name: "area", className: "ocr_carea", bboxOffset: 1, order: 2 },
     Paragraph: { name: "paragraph", className: "ocr_par", bboxOffset: 1, order: 3 },
@@ -15,7 +18,7 @@ var ElementTypeByClass = Object.fromEntries(Object.keys(ElementType).map(functio
     return [elementType.className, elementType];
 }));
 } catch(e) {
-    console.error(e)
+    logging.error(e)
 }
 
 export default function DisplayHocrWithImage(props) {
@@ -59,14 +62,14 @@ export function DisplayHocr(props) {
         return style;
     }
 
-    console.log("DisplayHocr props", props)
+    logging.log("DisplayHocr props", props)
     var parseHocr = (hocr) => {
         try {
             var hocr_parse_html_wrapper = document.createElement('div');
             hocr_parse_html_wrapper.innerHTML = hocr;
             return processElement(hocr_parse_html_wrapper.firstElementChild, 0, null, 0)
         } catch (e) {
-            console.error("DisplayHocr error", e)
+            logging.error("DisplayHocr error", e)
             return <div></div>
         }
     } 
@@ -83,7 +86,7 @@ export function DisplayHocr(props) {
 
     var processElement = (root_element) => {
         var elements = flatChildren(root_element).concat([root_element]);
-        console.log("elements", elements);
+        logging.log("elements", elements);
         var elements_data = elements.map (element => {
             var className = element.className;
             if (typeof className === 'undefined') {
@@ -115,21 +118,21 @@ export function DisplayHocr(props) {
         }).filter(Boolean).sort((a, b) => {
             return a.order - b.order;
         })
-        console.log("elements_data", elements_data);
+        logging.log("elements_data", elements_data);
         var result_elements = elements_data.map((element_data, i) => {
             var style = buildStyle(element_data.type, element_data.bbox);
             return <div style={style} id={base_id + "-" + element_data.id} key={i} className={element_data.type.className}>
                 {element_data.text}
             </div>
         })
-        console.log("result_elements", result_elements);
+        logging.log("result_elements", result_elements);
         return <div style={{ position: "absolute"}}>{result_elements}</div>;
     }
 
     var parseBbox = (title, index_offset) => {
         var result = {};
         var arr = title.split(" ");
-        console.log(`bbox ${arr[index_offset]} ${arr[index_offset + 1]} ${arr[index_offset + 2]} ${arr[index_offset + 3]}`)
+        logging.log(`bbox ${arr[index_offset]} ${arr[index_offset + 1]} ${arr[index_offset + 2]} ${arr[index_offset + 3]}`)
         result.left = parseInt(arr[index_offset]);
         result.top = parseInt(arr[index_offset + 1])
         result.right = parseInt(arr[index_offset + 2])

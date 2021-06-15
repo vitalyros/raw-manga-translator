@@ -306,7 +306,7 @@ function convertToGray(src) {
     logging.debug("converted to gray", gray, endDate.getTime() - startDate.getTime());
     return gray;
   } catch (e) {
-    console.error("failed convert to gray", src, e);
+    logging.error("failed convert to gray", src, e);
     return null;
   }
 }
@@ -319,7 +319,7 @@ function readImage(image) {
     logging.debug("image read", src, image, endDate.getTime() - startDate.getTime());
     return src;
   } catch (e) {
-    console.error("failed to read src image", image, e);
+    logging.error("failed to read src image", image, e);
     return null;
   }
 }
@@ -553,7 +553,7 @@ function invalidateCache() {
     deleteCV(cache.contours)
     deleteCV(cache.hierarchy)
     deleteCV(cache.srcGray)
-    console.log("cache invalidated", cache)
+    logging.log("cache invalidated", cache)
     cache = null;
   }
 }
@@ -567,7 +567,7 @@ function saveCache(image, src, srcGray, contours, hierarchy) {
       contours: contours,
       hierarchy: hierarchy
     }
-    console.log("cache saved", cache)
+    logging.log("cache saved", cache)
   }
 }
 
@@ -587,7 +587,7 @@ function findSpeechBubble(image, x, y, area) {
       srcGray = cache.srcGray
       contours = cache.contours
       hierarchy = cache.hierarchy
-      console.log("cache loaded", cache)
+      logging.log("cache loaded", cache)
     } else {
       invalidateCache()
 

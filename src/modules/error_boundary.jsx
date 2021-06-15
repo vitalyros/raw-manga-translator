@@ -1,4 +1,7 @@
 import React from 'react';
+import { loggingForModule } from '../utils/logging'
+
+const logging = loggingForModule("react_error_boundary")
 
 export default class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -10,7 +13,7 @@ export default class ErrorBoundary extends React.Component {
         return { hasError: true };  
     }
     componentDidCatch(error, errorInfo) {   
-        console.log("react error", error, errorInfo);  
+        logging.error("react error", error, errorInfo);  
     }
     render() {
       if (this.state.hasError) { return (<p>react error</p>); } 

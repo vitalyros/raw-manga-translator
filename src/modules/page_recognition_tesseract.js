@@ -1,15 +1,13 @@
 const events = require('./events.js');
 const tesseract = require('tesseract.js');
+import * as events from "./events.js";
+import { loggingForModule } from '../utils/logging'
 
-const module_name = "page_recongition_tesseract";
+const moduleName = "page_recongition_tesseract";
+const logging = loggingForModule(moduleName)
 var enabled = false
-
 var workerPromise = null
 var worker = null
-
-function logError(...arg) {
-    console.error("Error: ", ...arg);
-}
 
 async function startTessaract() {
     try {
@@ -17,7 +15,7 @@ async function startTessaract() {
             workerPath: browser.extension.getURL("./node_modules/tesseract.js/dist/worker.min.js"),
             langPath: browser.extension.getURL("./lang"),
             corePath: browser.extension.getURL("./node_modules/tesseract.js-core/tesseract-core.wasm.js"),
-            logger: m => console.log("tesseract message", m)
+            logger: m => logging.debug("tesseract message", m)
         });
         await startingWorker.load();
 
@@ -33,7 +31,7 @@ async function startTessaract() {
         worker = startingWorker
         return worker
     } catch (e) {
-        logError("failed to start tesseract", e)
+        logging.error("failed to start tesseract", e)
     }
 }
 
@@ -42,16 +40,16 @@ async function onPageImageCaptured(message) {
         await waitForTesseract()
         try {
             var date1 = new Date();
-            console.log("recognition started at", date1)
+            logging.debug("recognition started at", date1)
             // To calculate the time difference of two dates
             var ocr_result = await worker.recognize(message.data.imageUri);
             var date2 = new Date();
             var dateDiff = date2.getTime() - date1.getTime();
-            console.log("recognition ended at", date1)
-            console.log(`recognition lasted ${dateDiff}`, dateDiff)
-            console.log("page image ocr", ocr_result);
+            logging.debug("recognition ended at", date1)
+            logging.debug(`recognition lasted ${dateDiff}`, dateDiff)
+            logging.debug("page image ocr", ocr_result);
         } catch (e) {
-            logError("recongintion failed", message, e)
+            logging.error("recongintion failed", message, e)
         }
     } 
 }

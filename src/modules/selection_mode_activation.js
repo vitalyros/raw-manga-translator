@@ -99,14 +99,14 @@ async function onSelectionModeSwitch() {
         await changeSelectionMenuState(newMode);
         await changeSelectionTabState(newMode);
     } catch(e) {
-        console.log("failed onSelectionModeSwitch", e)
+        logging.error("failed onSelectionModeSwitch", e)
     }
 }
 
 function tabActivated(event) {
     activeTabId = event.tabId
     var mode = getSelectionModeForCurrentTab()
-    console.log("tab activated, current selection mode", mode)
+    logging.debug("tab activated, current selection mode", mode)
     changeSelectionMenuState(mode);
 }
 

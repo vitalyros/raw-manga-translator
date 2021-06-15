@@ -23,5 +23,3 @@ export const TranslationLanguageList = [
 export const TranslationLanguages = Object.fromEntries(TranslationLanguageList.map((lang) => {
     return [lang.name, lang]
 }));
-
-console.log("translationLanguages", TranslationLanguages)

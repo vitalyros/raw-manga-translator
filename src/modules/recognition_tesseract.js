@@ -1,15 +1,13 @@
 const events = require('./events.js');
 const tesseract = require('tesseract.js');
+import { loggingForModule } from '../utils/logging'
 
-const module_name = "recongition_tesseract";
+const moduleName = "recongition_tesseract";
+const logging = loggingForModule(moduleName)
 var enabled = false
 
 var workerPromise = null
 var worker = null
-
-function logError(...arg) {
-    console.error("Error: ", ...arg);
-}
 
 async function startTessaract() {
     try {
@@ -21,13 +19,13 @@ async function startTessaract() {
                 if (e.status == 'recognizing text') {
                     events.fire({
                         type: events.EventTypes.RecognitionProgress,
-                        from: module_name,
+                        from: moduleName,
                         data: {
                             progress: e.progress
                         }
                     });
                 }
-                console.log("tesseract message", m)
+                logging.debug("tesseract message", m)
             }
         });
         await startingWorker.load();
@@ -59,7 +57,7 @@ async function onImageCaptured(event) {
             }
             events.fire({
                 type: events.EventTypes.RecognitionStart,
-                from: module_name,
+                from: moduleName,
                 data: {
                     point: event.data.point,
                     box: event.data.box,
@@ -78,7 +76,7 @@ async function onImageCaptured(event) {
             }
             events.fire({
                 type: events.EventTypes.RecognitionSuccess,
-                from: module_name,
+                from: moduleName,
                 data: {
                     point: event.data.point,
                     box: event.data.box,
@@ -90,7 +88,7 @@ async function onImageCaptured(event) {
             });
         } catch (e) {
             events.fire({
-                from: module_name,
+                from: moduleName,
                 type: events.EventTypes.RecognitionFailure, 
                 data: {
                     point: event.data.point,
