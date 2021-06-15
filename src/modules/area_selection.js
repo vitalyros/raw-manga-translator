@@ -447,7 +447,7 @@ export async function enable() {
            data: {} 
         });
         enabled = true
-        logging.debug(moduleName, "module enabled")
+        logging.debug("module enabled")
     }
 }
 
@@ -458,6 +458,6 @@ export async function disable() {
         events.removeListener(startSelectionMode, events.EventTypes.SelectAreaEnabled)
         events.removeListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled)      
         enabled = false
-        logging.debug(moduleName, "module disabled")
+        logging.debug("module disabled")
     }
 }

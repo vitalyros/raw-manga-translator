@@ -80,6 +80,7 @@ export async function enable() {
     if (!enabled) {
         events.addListener(onTextRecognized, events.EventTypes.RecognitionSuccess)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -90,6 +91,7 @@ export async function disable() {
         }
         events.removeListener(onTextRecognized, events.EventTypes.RecognitionSuccess)
         enabled = false
+        logging.debug("module disabled")
     }
 }
   

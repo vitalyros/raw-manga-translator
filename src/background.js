@@ -14,8 +14,8 @@ import * as logging from './utils/logging'
         var translation_stub = require('./modules/translation_stub.js');
         await translation_stub.enable();
         
-        var translation_unfriendly_google_translate = require('./modules/translation_unfriendly_google_translate.js');
-        await translation_unfriendly_google_translate.enable();
+        var translation_google_translate = require('./modules/translation_google_translate_api.js');
+        await translation_google_translate.enable();
 
         var translation_google_translate_tab = require('./modules/translation_google_translate_tab_browser.js');
         await translation_google_translate_tab.enable();

@@ -16,6 +16,7 @@ export async function enable() {
     if (!enabled) {
         browser.tabs.onZoomChange.addListener(onZoomChange)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -23,5 +24,6 @@ export async function disable() {
     if (enabled) {
         browser.tabs.onZoomChange.addListener(onZoomChange)
         enabled = false
+        logging.debug("module disabled")
     }
 }

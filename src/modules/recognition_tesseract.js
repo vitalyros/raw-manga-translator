@@ -121,6 +121,7 @@ export async function enable() {
         events.addListener(initilizeTesseract, events.EventTypes.SelectAreaEnabled);
         events.addListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -132,5 +133,6 @@ export async function disable() {
             worker.terminate();
         }
         enabled = false
+        logging.debug("module disabled")
     }
 }

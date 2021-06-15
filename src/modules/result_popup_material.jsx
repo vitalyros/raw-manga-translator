@@ -868,6 +868,7 @@ export async function enable() {
     if (!enabled) {
         events.addListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -883,5 +884,6 @@ export async function disable() {
         }
         events.removeListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = false
+        logging.debug("module disabled")
     }
 }

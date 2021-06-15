@@ -142,6 +142,7 @@ export async function enable() {
         await updateBrowserActionIcon(false)
         browser.browserAction.onClicked.addListener(onSelectionModeSwitch)
         enabled = true;
+        logging.debug("module enabled")
     }
 }
 
@@ -152,6 +153,7 @@ export async function disable() {
         browser.browserAction.onClicked.removeListener(onSelectionModeSwitch);
         browser.menus.remove(MENU_ITEM_ID);
         enabled = false;
+        logging.debug("module disabled")
     }
 }
 

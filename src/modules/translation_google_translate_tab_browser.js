@@ -89,6 +89,7 @@ export async function enable() {
         events.addListener(onTranslationFinished, events.EventTypes.GoogleTranslateTabTranslationFinished)
         events.addListener(onTranslationEnabled, events.EventTypes.GoogleTranslateTabTranslationEnabled)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -98,5 +99,6 @@ export async function disable() {
         events.removeListener(onTranslationFinished, events.EventTypes.GoogleTranslateTabTranslationFinished)
         events.removeListener(onTranslationEnabled, events.EventTypes.GoogleTranslateTabTranslationEnabled)
         enabled = false
+        logging.debug("module disabled")
     }
 }

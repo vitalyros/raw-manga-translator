@@ -72,6 +72,7 @@ export async function enable() {
     if (!enabled) {
         events.addListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -79,5 +80,6 @@ export async function disable() {
     if (enabled) {
         events.removeListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
         enabled = false
+        logging.debug("module disabled")
     }
 } 

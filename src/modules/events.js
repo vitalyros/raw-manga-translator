@@ -166,6 +166,7 @@ export async function enable(event_location) {
         } 
         await browser.runtime.onMessage.addListener(onEvent);
         enabled = true;
+        logging.debug("module enabled")
     }
 }
 
@@ -174,5 +175,6 @@ export async function disable() {
         await browser.runtime.onMessage.removeListener(onEvent);
         location = Location.Undefined;
         enabled = false;
+        logging.debug("module disabled")
     }
 }

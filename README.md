@@ -5,7 +5,7 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
 - User switches to selection mode and selects an area of browser screen.
 - A screenshot of the selected part is made.
 - The screenshot is processed with tesseract.js OCR tool to get Japanese text.
-- The Japanese text is then translated to English with the help of unfriendly (to Google) browser-based implementation of Google Translate API or a separate tab running the google translate site.
+- The Japanese text is then translated to English with the help of  browser-based implementation of Google Translate API or a separate tab running the google translate site.
 - The Translated English text is displayed near the selected area in a React js dialog
 
 ## Building Packaging Installing

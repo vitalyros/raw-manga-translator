@@ -2,7 +2,7 @@ import * as translation from '../utils/translation';
 import * as translate_api from 'google-translate-api-browser';
 import * as events from "./events.js";
 
-const moduleName = 'translate_unfriendly_google_translate_api';
+const moduleName = 'translate_google_translate_api';
 
 var enabled = false;
 
@@ -35,6 +35,7 @@ export async function enable() {
     if (!enabled) {
         events.addListener(onTranslationRequested, events.EventTypes.TranslationRequested)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -42,5 +43,6 @@ export async function disable() {
     if (enabled) {
         events.removeListener(onTranslationRequested, events.EventTypes.TranslationRequested)
         enabled = false
+        logging.debug("module disabled")
     }
 }

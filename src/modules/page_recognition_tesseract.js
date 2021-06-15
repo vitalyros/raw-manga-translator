@@ -75,6 +75,7 @@ export async function enable() {
         events.addListener(initilizeTesseract, events.EventTypes.PageInitialized);
         events.addListener(onPageImageCaptured, events.EventTypes.PageImageCaptured)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -86,5 +87,6 @@ export async function disable() {
             worker.terminate();
         }
         enabled = false
+        logging.debug("module disabled")
     }
 }
