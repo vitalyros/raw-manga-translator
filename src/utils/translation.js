@@ -1,5 +1,5 @@
 export const TranslationMethod = {
-    Stub: "Stub",
+    // Stub: "Stub",
     GoogleTranslateApi: "GoogleTranslateApi",
     GoogleTranslateTab: "GoogleTranslateTab"
 }

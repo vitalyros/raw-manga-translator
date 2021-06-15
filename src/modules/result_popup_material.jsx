@@ -27,7 +27,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ErrorBoundary from './error_boundary.jsx';
 import * as settings from '../utils/settings';
 import { theme } from '../themes/default.jsx';
-import _, { size } from "lodash";
+import _ from "lodash";
 
 const moduleName = 'result_popup';
 const logging = loggingForModule(moduleName);
