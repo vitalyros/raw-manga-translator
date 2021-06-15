@@ -2,7 +2,7 @@ import * as translation from '../utils/translation';
 import * as events from "./events.js";
 import * as tabs from '../utils/tabs.js'
 
-const module_name = 'translate_google_translate_tab';
+const moduleName = 'translate_google_translate_tab';
 
 var enabled = false;
 
@@ -19,7 +19,7 @@ async function onTranslationFinished(event) {
         }
         if (event.data.translatedText) {
             await events.fire({
-                from: module_name,
+                from: moduleName,
                 type: events.EventTypes.TranslationSuccess,
                 data: {
                     textToTranslate: event.data.textToTranslate,
@@ -29,7 +29,7 @@ async function onTranslationFinished(event) {
         }
     } catch (e) {
         events.fire({
-            from: module_name,
+            from: moduleName,
             type: events.EventTypes.TranslationFailure,
             data: {
                 exception: e
@@ -61,7 +61,7 @@ async function onTranslationRequested(event) {
         }
     } catch (e) {
         events.fire({
-            from: module_name,
+            from: moduleName,
             type: events.EventTypes.TranslationFailure,
             data: {
                 exception: e
@@ -73,7 +73,7 @@ async function onTranslationRequested(event) {
 async function onTranslationEnabled(event) {
     if (pendingTextToTranslate) {
         await events.fire({
-            from: module_name,
+            from: moduleName,
             type: events.EventTypes.GoogleTranslateTabTranslationRequested,
             data: {
                 textToTranslate: pendingTextToTranslate,

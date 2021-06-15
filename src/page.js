@@ -1,3 +1,5 @@
+import * as logging from './utils/logging'
+
 (async() => {
     try {
         var events = require('./modules/events.js');
@@ -31,6 +33,6 @@
         var area_selection = require('./modules/area_selection.js');
         await area_selection.enable();
     } catch (e) {
-        console.error("romatora initialization error", e)
+        logging.error("initialization error", e)
     }
 })();

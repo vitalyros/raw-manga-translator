@@ -1,5 +1,7 @@
-import {TranslationMethod, TranslationLanguages} from './translation'
+import {TranslationMethod, TranslationLanguages} from './translation';
+import { loggingForModule } from './logging';
 
+const logging = loggingForModule('settings');
 const storage = browser.storage.sync
 
 const TRANSLATION_METHOD_KEY = "translationMethod"
@@ -21,7 +23,7 @@ async function get(key) {
         var data = await storage.get();
         value = data[key]
     } catch (e) {
-        console.error("settings get error", key, e)
+        logging.error("settings get error", key, e)
     }
     return value;
 }
@@ -32,7 +34,7 @@ async function set(key, value) {
         data[key] = value
         await storage.set(data)
     } catch (e) {
-        console.error("settings set error", key, value, e)
+        logging.error("settings set error", key, value, e)
     }
 }
 

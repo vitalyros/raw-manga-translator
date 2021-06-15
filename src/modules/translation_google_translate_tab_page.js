@@ -1,7 +1,8 @@
 import * as events from "./events.js";
+import { loggingForModule } from '../utils/logging';
 
-const module_name = 'translate_google_translate_tab_page';
-
+const moduleName = 'translate_google_translate_tab_page';
+const logging = loggingForModule(moduleName);
 var enabled = false;
 
 function isGoogleTranslate() {
@@ -19,7 +20,7 @@ async function onTranslationRequested(event) {
                 if (resultElements.length > 0) {
                     var translatedText = Array.from(resultElements).slice(0, -1).map((elem) => elem.innerHTML).join('');
                     await events.fire({
-                        from: module_name,
+                        from: moduleName,
                         type: events.EventTypes.GoogleTranslateTabTranslationFinished,
                         data: {
                             textToTranslate: event.data.textToTranslate,
@@ -31,7 +32,7 @@ async function onTranslationRequested(event) {
                 interval += 1;
             }
             await events.fire({
-                from: module_name,
+                from: moduleName,
                 type: events.EventTypes.GoogleTranslateTabTranslationFinished,
                 data: {
                     textToTranslate: event.data.textToTranslate,
@@ -39,11 +40,11 @@ async function onTranslationRequested(event) {
                 }
             });
         } else {
-            console.error("current page is not a google translate page")
+            logging.error("current page is not a google translate page")
         }
     } catch (e) {
         events.fire({
-            from: module_name,
+            from: moduleName,
             type: events.EventTypes.TranslationFailure,
             data: {
                 reason: "code for google translate page failed",
@@ -59,11 +60,12 @@ export async function enable() {
         enabled = true
         if (isGoogleTranslate()) {
             await events.fire({
-                from: module_name,
+                from: moduleName,
                 type: events.EventTypes.GoogleTranslateTabTranslationEnabled,
                 data: {}
             });
         }
+        logging.debug("module enabled")
     }
 }
 
@@ -71,5 +73,6 @@ export async function disable() {
     if (enabled) {
         events.removeListener(onTranslationRequested, events.EventTypes.GoogleTranslateTabTranslationRequested)
         enabled = false
+        logging.debug("module disabled")
     }
 }

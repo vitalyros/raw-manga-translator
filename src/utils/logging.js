@@ -1,5 +1,5 @@
 import {getDebugEnabled} from './settings'
-import {APP_NAME} from './const'
+import {APP_NAME, APP_NICK} from './const'
 
 const debugEnabled = getDebugEnabled();
 debug()
@@ -14,7 +14,7 @@ export function warn(...args) {
 
 export function debug(...args) {
     if (debugEnabled) {
-        console.debug(APP_NAME, ...args)
+        console.debug(APP_NICK, ...args)
     }
 }
 

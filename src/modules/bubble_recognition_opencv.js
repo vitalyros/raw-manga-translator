@@ -553,7 +553,7 @@ function invalidateCache() {
     deleteCV(cache.contours)
     deleteCV(cache.hierarchy)
     deleteCV(cache.srcGray)
-    logging.log("cache invalidated", cache)
+    logging.debug("cache invalidated", cache)
     cache = null;
   }
 }
@@ -567,7 +567,7 @@ function saveCache(image, src, srcGray, contours, hierarchy) {
       contours: contours,
       hierarchy: hierarchy
     }
-    logging.log("cache saved", cache)
+    logging.debug("cache saved", cache)
   }
 }
 
@@ -587,7 +587,7 @@ function findSpeechBubble(image, x, y, area) {
       srcGray = cache.srcGray
       contours = cache.contours
       hierarchy = cache.hierarchy
-      logging.log("cache loaded", cache)
+      logging.debug("cache loaded", cache)
     } else {
       invalidateCache()
 

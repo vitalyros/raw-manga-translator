@@ -11,9 +11,10 @@ import ErrorBoundary from './error_boundary.jsx';
 import * as settings from '../utils/settings';
 import { theme } from '../themes/default.jsx';
 import _ from "lodash";
+import { loggingForModule } from '../utils/logging';
 
-const module_name = 'translation_progress_ui';
-
+const moduleName = 'translation_progress_ui';
+const logging = loggingForModule(moduleName)
 var enabled = false;
 const wrapper_div_id = "romatora-translation-progress-wrapper"
 var wrapper_div = null;
@@ -147,7 +148,7 @@ async function lazyInitComponent() {
     try {
       dialog_component = await ReactDOM.render(<RecognitionProgress/>, document.querySelector(`#${wrapper_div_id}`));
     } catch(e) {
-      console.error ("Failed to initialize popup", dialog_component, e)
+      logging.error("Failed to initialize popup", dialog_component, e)
     }
   }
 }
@@ -156,6 +157,7 @@ export async function enable() {
     if (!enabled) {
         events.addListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -171,5 +173,6 @@ export async function disable() {
         }
         events.removeListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = false
+        logging.debug("module disabled")
     }
 }

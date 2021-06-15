@@ -1,7 +1,8 @@
 import * as events from './events';
-import * as logging from '../utils/logging';
+import { loggingForModule } from '../utils/logging';
 
-const module_name = 'page_capture_screenshot'
+const moduleName = 'page_capture_screenshot'
+const logging = loggingForModule(moduleName)
 var enabled = false;
 
 async function onPageInitialized(message) {
@@ -18,7 +19,7 @@ async function onPageInitialized(message) {
         }
         var imageUri = await browser.tabs.captureVisibleTab(null, detail);
         events.fire({
-            from: module_name,
+            from: moduleName,
             type: events.EventTypes.PageImageCaptured,
             data: {
                 rect: rect,
@@ -26,7 +27,7 @@ async function onPageInitialized(message) {
             }
         });
     } catch (e) {
-        console.error("Failed onPageInitialized", message, e)
+        logging.error("Failed onPageInitialized", message, e)
     }
 }
 
@@ -34,6 +35,7 @@ export async function enable() {
     if (!enabled) {
         events.addListener(onPageInitialized, events.EventTypes.SelectAreaEnabled)
         enabled = true
+        logging.debug("module enabled")
     }
 }
 
@@ -41,5 +43,6 @@ export async function disable() {
     if (enabled) {
         events.removeListener(onPageInitialized, events.EventTypes.SelectAreaEnabled)
         enabled = false
+        logging.debug("module disabled")
     }
 }

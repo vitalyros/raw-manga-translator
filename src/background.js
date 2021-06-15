@@ -1,3 +1,5 @@
+import * as logging from './utils/logging'
+
 (async() => {
     try {
         var events = require('./modules/events.js');
@@ -28,6 +30,6 @@
         // await page_capture.enable()
 
     } catch (e) {
-        console.error("romatora initialization error", e)
+        logging.error("initialization error", e)
     }
 })();

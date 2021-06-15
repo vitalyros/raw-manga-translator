@@ -1,7 +1,7 @@
 const events = require('./events.js');
 const tesseract = require('tesseract.js');
 
-const module_name = "recongition_stub";
+const moduleName = "recongition_stub";
 var enabled = false
 var throwError = false
 
@@ -15,7 +15,7 @@ async function onImageCaptured(event) {
             }
             events.fire({
                 type: events.EventTypes.RecognitionStart,
-                from: module_name,
+                from: moduleName,
                 data: {
                     point: event.data.point,
                     box: event.data.box,
@@ -33,7 +33,7 @@ async function onImageCaptured(event) {
             if (throwError) {
                 events.fire({
                     type: events.EventTypes.RecognitionSuccess,
-                    from: module_name,
+                    from: moduleName,
                     data: {
                         point: event.data.point,
                         box: event.data.box,
@@ -45,7 +45,7 @@ async function onImageCaptured(event) {
                 });
             } else {
                 events.fire({
-                    from: module_name,
+                    from: moduleName,
                     type: events.EventTypes.RecognitionFailure, 
                     data: {
                         point: event.data.point,
@@ -56,7 +56,7 @@ async function onImageCaptured(event) {
             }
         } catch (e) {
             events.fire({
-                from: module_name,
+                from: moduleName,
                 type: events.EventTypes.RecognitionFailure, 
                 data: {
                     point: event.data.point,

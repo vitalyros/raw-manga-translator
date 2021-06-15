@@ -2,7 +2,7 @@ import * as translation from '../utils/translation';
 import * as translate_api from 'google-translate-api-browser';
 import * as events from "./events.js";
 
-const module_name = 'translate_unfriendly_google_translate_api';
+const moduleName = 'translate_unfriendly_google_translate_api';
 
 var enabled = false;
 
@@ -12,7 +12,7 @@ async function onTranslationRequested(event) {
             const lang = translation.TranslationLanguages[event.data.translationLanguage]
             var res = await translate_api.translate(event.data.textToTranslate, { from: "ja", to: lang.code })
             await events.fire({
-                from: module_name,
+                from: moduleName,
                 type: events.EventTypes.TranslationSuccess,
                 data: {
                     textToTranslate: event.data.textToTranslate,
@@ -22,7 +22,7 @@ async function onTranslationRequested(event) {
         }
     } catch (e) {
         events.fire({
-            from: module_name,
+            from: moduleName,
             type: events.EventTypes.TranslationFailure,
             data: {
                 exception: e

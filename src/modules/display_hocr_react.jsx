@@ -62,7 +62,7 @@ export function DisplayHocr(props) {
         return style;
     }
 
-    logging.log("DisplayHocr props", props)
+    logging.debug("DisplayHocr props", props)
     var parseHocr = (hocr) => {
         try {
             var hocr_parse_html_wrapper = document.createElement('div');
@@ -86,7 +86,7 @@ export function DisplayHocr(props) {
 
     var processElement = (root_element) => {
         var elements = flatChildren(root_element).concat([root_element]);
-        logging.log("elements", elements);
+        logging.debug("elements", elements);
         var elements_data = elements.map (element => {
             var className = element.className;
             if (typeof className === 'undefined') {
@@ -118,21 +118,21 @@ export function DisplayHocr(props) {
         }).filter(Boolean).sort((a, b) => {
             return a.order - b.order;
         })
-        logging.log("elements_data", elements_data);
+        logging.debug("elements_data", elements_data);
         var result_elements = elements_data.map((element_data, i) => {
             var style = buildStyle(element_data.type, element_data.bbox);
             return <div style={style} id={base_id + "-" + element_data.id} key={i} className={element_data.type.className}>
                 {element_data.text}
             </div>
         })
-        logging.log("result_elements", result_elements);
+        logging.debug("result_elements", result_elements);
         return <div style={{ position: "absolute"}}>{result_elements}</div>;
     }
 
     var parseBbox = (title, index_offset) => {
         var result = {};
         var arr = title.split(" ");
-        logging.log(`bbox ${arr[index_offset]} ${arr[index_offset + 1]} ${arr[index_offset + 2]} ${arr[index_offset + 3]}`)
+        logging.debug(`bbox ${arr[index_offset]} ${arr[index_offset + 1]} ${arr[index_offset + 2]} ${arr[index_offset + 3]}`)
         result.left = parseInt(arr[index_offset]);
         result.top = parseInt(arr[index_offset + 1])
         result.right = parseInt(arr[index_offset + 2])
