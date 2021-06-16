@@ -1,12 +1,12 @@
 import * as events from "./events.js";
-import { loggingForModule } from '../utils/logging';
+import { loggingForModule } from "../utils/logging";
 
-const moduleName = 'translate_google_translate_tab_page';
+const moduleName = "translate_google_translate_tab_page";
 const logging = loggingForModule(moduleName);
 var enabled = false;
 
 function isGoogleTranslate() {
-    return window.location.href.includes('translate.google.com')
+    return window.location.href.includes("translate.google.com");
 }
 
 async function onTranslationRequested(event) {
@@ -16,9 +16,9 @@ async function onTranslationRequested(event) {
             var maxIntervals = 50;
             while (interval < maxIntervals) {
                 await new Promise(r => setTimeout(r, 200));
-                var resultElements = document.querySelectorAll('c-wiz > div > div > div > span > span > span')
+                var resultElements = document.querySelectorAll("c-wiz > div > div > div > span > span > span");
                 if (resultElements.length > 0) {
-                    var translatedText = Array.from(resultElements).slice(0, -1).map((elem) => elem.innerHTML).join('');
+                    var translatedText = Array.from(resultElements).slice(0, -1).map((elem) => elem.innerHTML).join("");
                     await events.fire({
                         from: moduleName,
                         type: events.EventTypes.GoogleTranslateTabTranslationFinished,
@@ -27,7 +27,7 @@ async function onTranslationRequested(event) {
                             translatedText: translatedText
                         }
                     });
-                    return
+                    return;
                 }
                 interval += 1;
             }
@@ -40,7 +40,7 @@ async function onTranslationRequested(event) {
                 }
             });
         } else {
-            logging.error("current page is not a google translate page")
+            logging.error("current page is not a google translate page");
         }
     } catch (e) {
         events.fire({
@@ -56,8 +56,8 @@ async function onTranslationRequested(event) {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onTranslationRequested, events.EventTypes.GoogleTranslateTabTranslationRequested)
-        enabled = true
+        events.addListener(onTranslationRequested, events.EventTypes.GoogleTranslateTabTranslationRequested);
+        enabled = true;
         if (isGoogleTranslate()) {
             await events.fire({
                 from: moduleName,
@@ -65,14 +65,14 @@ export async function enable() {
                 data: {}
             });
         }
-        logging.debug("module enabled")
+        logging.debug("module enabled");
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onTranslationRequested, events.EventTypes.GoogleTranslateTabTranslationRequested)
-        enabled = false
-        logging.debug("module disabled")
+        events.removeListener(onTranslationRequested, events.EventTypes.GoogleTranslateTabTranslationRequested);
+        enabled = false;
+        logging.debug("module disabled");
     }
 }

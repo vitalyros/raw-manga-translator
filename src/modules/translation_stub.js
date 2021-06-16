@@ -1,8 +1,8 @@
-import * as events from './events.js';
-import * as translation from '../utils/translation';
-import {loggingForModule} from '../utils/logging';
+import * as events from "./events.js";
+import * as translation from "../utils/translation";
+import {loggingForModule} from "../utils/logging";
 
-const moduleName = 'translate_stub';
+const moduleName = "translate_stub";
 const logging = loggingForModule(moduleName);
 
 var enabled = false;
@@ -18,7 +18,7 @@ async function onTranslationRequested(event) {
                     data: {}
                 });
             } else {
-                const lang = translation.TranslationLanguages[event.data.translationLanguage]
+                const lang = translation.TranslationLanguages[event.data.translationLanguage];
                 await events.fire({
                     from: moduleName,
                     type: events.EventTypes.TranslationSuccess,
@@ -44,8 +44,8 @@ export async function enable() {
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onTranslationRequested, events.EventTypes.TranslationRequested)
-        enabled = false
+        events.removeListener(onTranslationRequested, events.EventTypes.TranslationRequested);
+        enabled = false;
         logging.debug("module enabled");
     }
 }

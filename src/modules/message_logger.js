@@ -1,8 +1,8 @@
-import * as events from './events';
-import {loggingForModule} from '../utils/logging';
+import * as events from "./events";
+import {loggingForModule} from "../utils/logging";
 
-const moduleName = 'event_logger';
-const logging = loggingForModule(moduleName)
+const moduleName = "event_logger";
+const logging = loggingForModule(moduleName);
 
 var enabled = false;
 
@@ -14,7 +14,7 @@ export async function enable() {
     if (!enabled) {
         events.addListener(onEvent);
         enabled = true;
-        logging.debug("module enabled")
+        logging.debug("module enabled");
     }
 }
 
@@ -22,6 +22,6 @@ export async function disable() {
     if (enabled) {
         events.removeListener(onEvent);
         enabled = false;
-        logging.debug("module disabled")
+        logging.debug("module disabled");
     }
 }

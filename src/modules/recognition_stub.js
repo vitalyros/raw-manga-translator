@@ -1,9 +1,12 @@
-const events = require('./events.js');
-const tesseract = require('tesseract.js');
+import * as events from "./events.js";
+import { loggingForModule } from "../utils/logging";
+// const tesseract = require("tesseract.js");
 
 const moduleName = "recongition_stub";
-var enabled = false
-var throwError = false
+const logging = loggingForModule(moduleName);
+
+var enabled = false;
+var throwError = false;
 
 async function onImageCaptured(event) {
     if (enabled) {
@@ -12,7 +15,7 @@ async function onImageCaptured(event) {
             var startMetrics = { 
                 startDate: startDate, 
                 startTime: startDate.getTime() 
-            }
+            };
             events.fire({
                 type: events.EventTypes.RecognitionStart,
                 from: moduleName,
@@ -29,7 +32,7 @@ async function onImageCaptured(event) {
                 endDate: endDate,
                 endTime: endDate.getTime(),
                 duration: startDate.getTime() - endDate.getTime()
-            }
+            };
             if (throwError) {
                 events.fire({
                     type: events.EventTypes.RecognitionSuccess,
@@ -52,7 +55,7 @@ async function onImageCaptured(event) {
                         box: event.data.box,
                         image_uri: event.data.image_uri,
                     }
-                })
+                });
             }
         } catch (e) {
             events.fire({
@@ -63,23 +66,23 @@ async function onImageCaptured(event) {
                     box: event.data.box,
                     image_uri: event.data.image_uri,
                 }
-            })
+            });
         }
     } 
 }
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
-        enabled = true
-        logging.debug("module enabled")
+        events.addListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess);
+        enabled = true;
+        logging.debug("module enabled");
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess)
-        enabled = false
-        logging.debug("module disabled")
+        events.removeListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess);
+        enabled = false;
+        logging.debug("module disabled");
     }
 } 

@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
     "watch": "webpack --watch",
-    "dist": "webpack && npm-pack-zip && cross-var mv $npm_package_name.zip $npm_package_name.xpi"
+    "dist": "eslint src && webpack && npm-pack-zip && cross-var mv $npm_package_name.zip $npm_package_name.xpi",
+    "lint": "eslint --fix src"
   },
   "files": [
     "dist",

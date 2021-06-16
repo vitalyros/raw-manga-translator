@@ -2,7 +2,7 @@ export const TranslationMethod = {
     // Stub: "Stub",
     GoogleTranslateApi: "GoogleTranslateApi",
     GoogleTranslateTab: "GoogleTranslateTab"
-}
+};
 
 
 export const TranslationLanguageList = [
@@ -18,8 +18,8 @@ export const TranslationLanguageList = [
     { name: "Russian", code: "ru"},
     { name: "Spanish", code: "es"},
     { name: "Urdu", code: "ur"}
-  ]
+];
 
 export const TranslationLanguages = Object.fromEntries(TranslationLanguageList.map((lang) => {
-    return [lang.name, lang]
+    return [lang.name, lang];
 }));
