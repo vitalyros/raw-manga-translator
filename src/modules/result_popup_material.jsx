@@ -291,7 +291,7 @@ function TranslationTool(props) {
     >
       <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateTab}>Google Translate Tab</MenuItem>
       <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.GoogleTranslateApi}>Google Translate Api</MenuItem>
-      <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.Stub}>Stub</MenuItem>
+      {/* <MenuItem className={props.classes.translate_method_select_menu_item} value={translation.TranslationMethod.Stub}>Stub</MenuItem> */}
     </Select>
     <Select
       className={props.classes.translate_language_select}
@@ -563,7 +563,7 @@ function TranslationDialog(props) {
       events.addListener(onRecognitionSuccess, events.EventTypes.RecognitionSuccess)
       window.addEventListener('resize', onZoomChanged)
       return () => {
-        events.addListener(onBubbleRecognitionFailure, events.EventTypes.BubbleRecognitionFailure)
+        events.removeListener(onBubbleRecognitionFailure, events.EventTypes.BubbleRecognitionFailure)
         events.removeListener(onTranslationFailure, events.EventTypes.TranslationFailure)
         events.removeListener(onTranslationSuccess, events.EventTypes.TranslationSuccess)
         events.removeListener(onRecognitionFailure, events.EventTypes.RecognitionFailure)
