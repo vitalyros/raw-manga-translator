@@ -12,9 +12,6 @@ import * as logging from "./utils/logging";
         // var recognition = require('./modules/recognition_stub.js');
         await recognition.enable();
 
-        // var page_recongition = require('./modules/page_recognition_tesseract.js');
-        // await page_recongition.enable()
-
         var recognition_progress = require("./modules/recognition_progress_material.jsx");
         await recognition_progress.enable();
 
