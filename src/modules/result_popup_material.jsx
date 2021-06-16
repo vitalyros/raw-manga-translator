@@ -553,11 +553,6 @@ function TranslationDialog(props) {
       setZoom(getCurrentZoom())
     }
 
-    const onTabZoomChanged = (event) => {
-      // logging.debug (`${(window.outerWidth - 10 ) / window.innerWidth}`)
-      // setZoom(event.data.newZoomFactor)
-    }
-
     const adjustedPosition = repositionBasedOnZoomChange(basePosition, baseZoom, zoom)
     
     useEffect(() => {
@@ -566,7 +561,6 @@ function TranslationDialog(props) {
       events.addListener(onTranslationSuccess, events.EventTypes.TranslationSuccess)
       events.addListener(onRecognitionFailure, events.EventTypes.RecognitionFailure)
       events.addListener(onRecognitionSuccess, events.EventTypes.RecognitionSuccess)
-      events.addListener(onTabZoomChanged, events.EventTypes.TabZoomChanged)
       window.addEventListener('resize', onZoomChanged)
       return () => {
         events.addListener(onBubbleRecognitionFailure, events.EventTypes.BubbleRecognitionFailure)
@@ -574,7 +568,6 @@ function TranslationDialog(props) {
         events.removeListener(onTranslationSuccess, events.EventTypes.TranslationSuccess)
         events.removeListener(onRecognitionFailure, events.EventTypes.RecognitionFailure)
         events.removeListener(onRecognitionSuccess, events.EventTypes.RecognitionSuccess)
-        events.removeListener(onTabZoomChanged, events.EventTypes.TabZoomChanged)
         window.removeEventListener('resize', onZoomChanged)
       }
     }, [translationMethod, translationLanguage]);

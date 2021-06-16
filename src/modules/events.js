@@ -27,8 +27,6 @@ export const EventTypes = {
     RecognitionSuccess: 'RecognitionSuccess',
     RecognitionFailure: 'RecognitionFailure',
 
-    TabZoomChanged: 'TabZoomChanged',
-    
     SelectionModeEnabled: 'SelectionModeEnabled',
 
     AccordionResized: 'AccordionResized',
