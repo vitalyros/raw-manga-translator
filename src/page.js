@@ -1,7 +1,10 @@
 /* global require*/
 import * as logging from "./utils/logging";
+
 (async() => {
     try {
+        await logging.init();
+
         var events = require("./modules/events.js");
         await events.enable(events.Location.Page);
 

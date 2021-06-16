@@ -1,18 +1,19 @@
 {
   "name": "raw-manga-translator-firefox-plugin",
-  "version": "0.1",
+  "version": "0.1.0",
   "description": "An opensource firefox plugin that automatically translates texts in japanese manga on demand",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
     "watch": "webpack --watch",
-    "dist": "eslint src && webpack && npm-pack-zip && cross-var mv $npm_package_name.zip $npm_package_name.xpi",
+    "dist": "eslint src && webpack && npm-pack-zip && cross-var mv $npm_package_name.zip $npm_package_name-$npm_package_version.xpi",
     "lint": "eslint --fix src"
   },
   "files": [
     "dist",
     "lang",
+    "icons",
     "manifest.json",
     "LICENSE.txt",
     "README.md"

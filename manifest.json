@@ -1,14 +1,15 @@
 {
     "manifest_version": 2,
     "name": "raw manga translator",
-    "version": "0.0.1",
+    "version": "0.1.0",
   
+    "author": "Vitaly Roslov",
     "description": "raw manga translator",
-
+    "homepage_url": "https://github.com/vitalyros/raw-manga-translator",
     "browser_specific_settings": {
       "gecko": {
-      "id": "romatora@vitaly",
-      "strict_min_version": "0.0.1"
+      "id": "raw_manga_translator@vitalyros",
+      "strict_min_version": "0.1.0"
       }
     },
 

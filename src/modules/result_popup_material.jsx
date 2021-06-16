@@ -638,7 +638,7 @@ function TranslationDialog(props) {
         translate_method_select_menu: {
           "& .MuiPopover-paper": {
             width: `${170 * scale}px`,
-            height: `${100 * scale}px`,
+            height: `${70 * scale}px`,
           },
           "& .MuiMenu-list": {
             transformOrigin: "top left", 

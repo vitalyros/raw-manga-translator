@@ -9,10 +9,12 @@ const TRANSLATION_LANGUAGE_KEY = "translationLanguage";
 const DEBUG_ENABLED = "debugEnabled";
 
 async function getWithDefaultValue(key, defaultValue) {
-    const value = get(key);
+    const value = await get(key);
     if (value === null || typeof value === "undefined") {
+        logging.debug("returning default value", key, defaultValue, value, typeof value);
         return defaultValue;
     } else {
+        logging.debug("returning value", key, value);
         return value;
     }
 }
@@ -38,7 +40,6 @@ async function set(key, value) {
     }
 }
 
-
 export async function getDefaultTranslationMethod() {
     return await getWithDefaultValue(TRANSLATION_METHOD_KEY, TranslationMethod.GoogleTranslateApi);
 }
@@ -48,7 +49,7 @@ export async function setDefaultTranslationMethod(value) {
 }
 
 export async function getDefaultTranslationLanguage() {
-    return await getWithDefaultValue(TRANSLATION_LANGUAGE_KEY, TranslationLanguages.English,name);
+    return await getWithDefaultValue(TRANSLATION_LANGUAGE_KEY, TranslationLanguages.English.name);
 }
 
 export async function setDefaultTranslationLanguage(value) {
@@ -56,7 +57,7 @@ export async function setDefaultTranslationLanguage(value) {
 }
 
 export async function getDebugEnabled() {
-    return await getWithDefaultValue(DEBUG_ENABLED, false);
+    return await getWithDefaultValue(DEBUG_ENABLED, true);
 }
 
 export async function setDebugEnabled(value) {
