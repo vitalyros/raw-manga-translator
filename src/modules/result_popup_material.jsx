@@ -2,8 +2,8 @@ import * as events from './events';
 import { loggingForModule } from '../utils/logging';
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { makeStyles, useTheme } from '@material-ui/core';
-import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core';
+import { ThemeProvider } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -16,7 +16,6 @@ import TextField from '@material-ui/core/TextField';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import DisplayHocrWithImage from './display_hocr_react.jsx';
 import * as translation from '../utils/translation';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -380,9 +379,6 @@ function ResultPopupContent(props) {
       direction="row"
       justify="flex-start"
       alignItems="flex-start">
-        {/* <Grid item>
-          <DisplayHocrWithImage hocr={this.props.hocr} imageUri={this.props.imageUri}/>
-        </Grid> */}
         <Grid item>
         <TranslationTool 
           classes={props.classes}

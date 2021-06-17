@@ -1,6 +1,6 @@
 {
   "name": "raw-manga-translator-firefox-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An opensource firefox plugin that automatically translates texts in japanese manga on demand",
   "private": true,
   "scripts": {
