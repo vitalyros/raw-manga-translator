@@ -12,9 +12,9 @@ var worker = null;
 async function startTessaract() {
     try {
         var startingWorker = createWorker({
-            workerPath: browser.extension.getURL("./dist/tesseract/worker.min.js"),
+            workerPath: browser.extension.getURL("./dist/ext/tesseract/worker.min.js"),
             langPath: browser.extension.getURL("./lang"),
-            corePath: browser.extension.getURL("./dist/tesseract-core/tesseract-core.wasm.js"),
+            corePath: browser.extension.getURL("./dist/ext/tesseract/tesseract-core.wasm.js"),
             logger: e => {
                 if (e.status == "recognizing text") {
                     events.fire({

@@ -2,10 +2,10 @@ const path = require('path');
 const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   entry: {
     background: './src/background.js',
-    page: './src/page.js'
+    page: './src/page.js',
   },
   devtool: 'inline-source-map',
   watchOptions: {
@@ -23,7 +23,7 @@ module.exports = {
         test: /\.jsx$/,
         exclude: /node_modules/,
         loader: 'babel-loader',
-      }
+      },
     ],
   },
   resolve: {
@@ -36,8 +36,8 @@ module.exports = {
   plugins: [
     new CopyPlugin({
       patterns: [
-        { from: "./node_modules/tesseract.js/dist/worker.min.js", to: "tesseract" },
-        { from: "./node_modules/tesseract.js-core/tesseract-core.wasm.js", to: "tesseract-core" },
+        { from: "./node_modules/tesseract.js/dist/worker.min.js", to: "ext/tesseract" },
+        { from: "./node_modules/tesseract.js-core/tesseract-core.wasm.js", to: "ext/tesseract" },
       ],
     }),
   ]

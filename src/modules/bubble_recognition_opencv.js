@@ -502,6 +502,7 @@ function BubbleFinder(imageArea, contours, hierarchy) {
         return this;
     };
 
+
     this.selectSmallest = () => {
         if (this.dataList.length == 0) {
             return null;

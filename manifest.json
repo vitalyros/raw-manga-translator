@@ -9,7 +9,7 @@
     "browser_specific_settings": {
       "gecko": {
       "id": "raw_manga_translator@vitalyros",
-      "strict_min_version": "0.1.0"
+      "strict_min_version": "89.0"
       }
     },
 
