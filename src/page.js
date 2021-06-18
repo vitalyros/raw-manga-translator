@@ -24,8 +24,8 @@ import * as logging from "./utils/logging";
         var translation_google_translate_tab = require("./modules/translation_google_translate_tab_page.js");
         await translation_google_translate_tab.enable();
 
-        // var bubble_recognition = require("./modules/bubble_recognition_opencv.js");
-        // await bubble_recognition.enable();
+        var bubble_recognition = require("./modules/bubble_recognition_opencv.js");
+        await bubble_recognition.enable();
 
         var area_selection = require("./modules/area_selection.js");
         await area_selection.enable();

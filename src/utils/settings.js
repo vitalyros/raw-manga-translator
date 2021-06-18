@@ -57,7 +57,7 @@ export async function setDefaultTranslationLanguage(value) {
 }
 
 export async function getDebugEnabled() {
-    return await getWithDefaultValue(DEBUG_ENABLED, false);
+    return await getWithDefaultValue(DEBUG_ENABLED, true);
 }
 
 export async function setDebugEnabled(value) {

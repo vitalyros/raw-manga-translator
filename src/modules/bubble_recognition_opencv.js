@@ -1,4 +1,4 @@
-import * as cv from "opencv.js";
+import {default as initOpencvJs} from "@vitalyros/opencvjs-separate-wasm";
 import * as events from "./events";
 import {loggingForModule} from "../utils/logging";
 import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
@@ -6,6 +6,30 @@ import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
 const moduleName = "bubble_recognition_opencv";
 const logging = loggingForModule(moduleName);
 var enabled = false;
+
+var cv;
+
+var CONTOUR_COLOR;
+var RECTANGLE_COLOR;
+var WHITE;
+var BLACK;
+
+async function initCV() {
+    var url = browser.extension.getURL("./dist/ext/opencv/opencv.wasm");
+    logging.debug("initializing CV", url);
+    const wasm = await fetch(url);
+    logging.debug("cv wasm fetched", wasm);
+    const buffer = await wasm.arrayBuffer();
+    logging.debug("cv wasm bufferized", buffer);
+    cv = await initOpencvJs({
+        wasmBinary: buffer
+    });
+    logging.debug("cv built", cv);
+    CONTOUR_COLOR = new cv.Scalar(255, 0, 0, 255);
+    RECTANGLE_COLOR = new cv.Scalar(0, 0, 255, 255);
+    WHITE = new cv.Scalar(255);
+    BLACK = new cv.Scalar(0);
+}
 
 // grayMode
 // true: Do mask manipulation with gray version of the image, transform to RGBA on output 
@@ -28,10 +52,7 @@ const showOutput = false;
 var useCache = true;
 var cache;
 
-const CONTOUR_COLOR = new cv.Scalar(255, 0, 0, 255);
-const RECTANGLE_COLOR = new cv.Scalar(0, 0, 255, 255);
-const WHITE = new cv.Scalar(255);
-const BLACK = new cv.Scalar(0);
+
 
 
 // Configurations for preprocessing of the image before contour finding algorithm 
@@ -314,6 +335,7 @@ function convertToGray(src) {
 function readImage(image) {
     try {
         const startDate = new Date();
+        logging.debug("CV", cv);
         const src = cv.imread(image);
         const endDate = new Date();
         logging.debug("image read", src, image, endDate.getTime() - startDate.getTime());
@@ -705,6 +727,7 @@ function onZoomChanged(/*event*/) {
 
 export async function enable() {
     if (!enabled) {
+        await initCV();
         events.addListener(onImagesClicked, events.EventTypes.ImagesClicked);
         window.addEventListener("resize", onZoomChanged);
         enabled = true;
