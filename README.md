@@ -12,6 +12,12 @@ For now only tested on rawdevart.com
 
 ## Building Packaging Installing
 
+### Installing the latest distro
+All distributives and their release notes are available [here](https://github.com/vitalyros/raw-manga-translator/releases)
+
+Download and install [the latest distro](https://github.com/vitalyros/raw-manga-translator/releases/download/v0.1.1/raw_manga_translator-0.1.1-fx.xpi) with firefox.
+
+
 ### Installing from sources
 - You will need [npm](https://www.npmjs.com/)  and [git](https://git-scm.com/) installed.
 - Fetch these sources with `git clone https://github.com/vitalyros/raw-manga-translator.git` if you already have not done so.
