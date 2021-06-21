@@ -1,4 +1,4 @@
-import {default as initOpencvJs} from "@vitalyros/opencvjs-separate-wasm";
+import {default as initOpencvJs} from "@vitalyros/opencvjs-wasm-separate";
 import * as events from "./events";
 import {loggingForModule} from "../utils/logging";
 import {APP_ELEMENT_ID_PREFIX} from "../utils/const";

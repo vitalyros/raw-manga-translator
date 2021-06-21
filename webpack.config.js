@@ -43,7 +43,7 @@ module.exports = {
   plugins: [
     new CopyPlugin({
       patterns: [
-        { from: "./node_modules/@vitalyros/opencvjs-separate-wasm/opencv.wasm", to: "ext/opencv" },
+        { from: "./node_modules/@vitalyros/opencvjs-wasm-separate/opencv.wasm", to: "ext/opencv" },
         { from: "./node_modules/tesseract.js/dist/worker.min.js", to: "ext/tesseract" },
         { from: "./node_modules/tesseract.js-core/tesseract-core.wasm.js", to: "ext/tesseract" },
       ],

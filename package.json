@@ -28,11 +28,11 @@
     ]
   },
   "dependencies": {
-    "@vitalyros/opencvjs-separate-wasm": "^4.5.2",
     "@material-ui/core": "^4.11.3",
     "@material-ui/icons": "^4.11.2",
     "@material-ui/styles": "^4.11.3",
     "@opencv.js/wasm": "^4.4.0",
+    "@vitalyros/opencvjs-wasm-separate": "^4.5.2",
     "fontsource-roboto": "^4.0.0",
     "google-translate-api-browser": "^1.1.71",
     "lodash": "^4.17.21",

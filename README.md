@@ -1,6 +1,8 @@
 # Raw Manga Translator Firefox Plugin
 An attempt to make an opensource firefox plugin that automatically recognizes and translates text in japanese manga on demand without a specialized backend service, i.e. with all the work done in browser or adopting existing services as backends.
 
+For now only tested on rawdevart.com
+
 ## Current pipeline
 - User switches to selection mode and selects an area of browser screen.
 - A screenshot of the selected part is made.
@@ -20,13 +22,13 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
 ## Using
 - Enable translation mode in the tab with manga. 
   - Click the plugin icon in the firefox toolkit
-  - Or left-click on the page to open the context menu and choose `Enable raw manga tranlation` 
+  - Or left-click on the page to open the context menu and choose `Enable raw manga translation` 
 - Select a text bubble or a text area
   - Right click a text bubble to translate it
   - If the text is not in the bubble or the recontition failed - right click and drag to select an area with text
 - Do disable translation mode 
   - Click once again on the plugin icon in the firefox toolkit
-  - Or left-click on the page to open the context menu and choose `Disable raw manga tranlation` 
+  - Or left-click on the page to open the context menu and choose `Disable raw manga translation` 
 
 ## License
 - All code in the `src` directory is under Apache License 2.0
