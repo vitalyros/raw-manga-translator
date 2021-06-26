@@ -35,6 +35,8 @@ var debugExclusionZones = false;
 var scrollX = 0;
 var scrollY = 0;
 
+var coverDiv;
+
 
 function selectionDivSide(start, end) {
     if (typeof selectionDiv != "undefined" || selectionDiv == null) {
@@ -108,12 +110,11 @@ export function hideSelectionDiv() {
     }
 }
 
-
-function allImagesFromPoint(clientX, clientY) {
-    logging.debug("allImagesFromPoint called", clientX, clientY);
+function allElementsFromPoint(clientX, clientY, types) {
+    logging.debug("allElementsFromPoint called", clientX, clientY, types);
     var start = true;
     var element;
-    var images = [];
+    var result = [];
     var elements = [];
     var old_visibility = [];
     try {
@@ -122,8 +123,11 @@ function allImagesFromPoint(clientX, clientY) {
             element = document.elementFromPoint(clientX, clientY);
             logging.debug("elementFromPoint", clientX, clientY, element);
             if (element && element !== document.documentElement) {
-                if (element instanceof HTMLImageElement || element instanceof HTMLCanvasElement) {
-                    images.push(element);
+                let found = types.find((type) => {
+                    return element instanceof type;
+                });
+                if (found) {
+                    result.push(element);
                 }
                 elements.push(element);
                 old_visibility.push(element.style.visibility);
@@ -131,16 +135,23 @@ function allImagesFromPoint(clientX, clientY) {
             }
         }
     } finally {
-        logging.debug("allImagesFromPoint restroring visiblility", elements, old_visibility);
+        logging.debug("allElementsFromPoint restroring visiblility", elements, old_visibility);
         for (var k = 0; k < elements.length; k++) {
             elements[k].style.visibility = old_visibility[k];
         }
     }
-    images.reverse();
-    logging.debug("allImagesFromPoint success", clientX ,clientY, elements, images);
-    return images;
+    result.reverse();
+    logging.debug("allElementsFromPoint success", clientX ,clientY, types, elements, result);
+    return result;
 }
 
+function allButtonsAndLinksFromPoint(clientX, clientY) {
+    return allElementsFromPoint(clientX, clientY, [HTMLButtonElement, HTMLLinkElement]); 
+}
+
+function allImagesFromPoint(clientX, clientY) { 
+    return allElementsFromPoint(clientX, clientY, [HTMLImageElement, HTMLCanvasElement]); 
+}
 
 export function onMouseMove(event) {
     if (event.button != 0) {
@@ -172,7 +183,6 @@ export function onMouseMove(event) {
         }
     }
 }
-
 
 export function onScroll(/*event*/) {
     if (isMouseDown) {
@@ -274,7 +284,7 @@ export function onMouseUp(event) {
 }
 
 export function onMouseDown(event) {
-    if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY)) {
+    if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY && event.button === 0)) {
         isMouseDown = true;
         scrollX = window.scrollX;
         scrollY = window.scrollY;
@@ -358,6 +368,41 @@ function onExclusionZoneDragUpdate(event) {
     exclusionZoneDragged = event.data.dragged;
 }
 
+function preventPropagation(event) {
+    logging.debug("prevent progagation", event);
+    try {
+        let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY)
+        let images = allImagesFromPoint(event.clientX, event.clientY)
+        logging.debug("cover div intercepted", event, buttons, images)
+        if (images.length > 0 && buttons.length === 0) {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+    } catch (e) {
+        logging.error("cover div interception failed", event, e);
+    }
+};
+
+
+// Div that covers all page and prevents onclick and onmousedown on images but not on buttons or links
+function createCoverDiv() {
+    if (!coverDiv) {
+        coverDiv = document.createElement("div");
+        coverDiv.style.position = "absolute";
+        coverDiv.style.width = "100%";
+        coverDiv.style.height = "100%";
+        coverDiv["z-index"] = 1298;
+        coverDiv.onclick = preventPropagation;
+        coverDiv.onmousedown = preventPropagation;
+    }
+    document.body.appendChild(coverDiv);
+}
+
+function removeCoverDiv() {
+    document.body.removeChild(coverDiv);
+    coverDiv = null;
+}
+
 async function startSelectionMode() {
     try {
         logging.debug(moduleName, "startSelectionMode called");
@@ -381,17 +426,14 @@ async function startSelectionMode() {
             if (typeof document.onselectstart !== "undefined") {
                 document_bak.onselectstart = document.onselectstart;
             }
+
             document.onmousemove = onMouseMove;
             document.onmouseup = onMouseUp;
             document.onmousedown = onMouseDown;
-            document.ondragstart = function(e) {
-                e.preventDefault();
-                return false;
-            };
-            document.onselectstart = function(e) {
-                e.preventDefault();
-                return false;
-            };
+            document.onclick = preventPropagation
+            document.ondragstart = preventPropagation
+            document.onselectstart = preventPropagation
+            createCoverDiv();
             window.addEventListener("scroll", onScroll);
             selection_mode = true;
             logging.debug(moduleName, "startSelectionMode success");
@@ -426,6 +468,7 @@ async function stopSelectionMode() {
                 }
                 document_bak = null;
             }
+            removeCoverDiv();
             window.removeEventListener("scroll", onScroll);
             hideSelectionDiv();
             selection_mode = false;

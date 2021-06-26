@@ -1,7 +1,9 @@
 # Raw Manga Translator Firefox Plugin
 An attempt to make an opensource firefox plugin that automatically recognizes and translates text in japanese manga on demand without a specialized backend service, i.e. with all the work done in browser or adopting existing services as backends.
 
-For now only tested on rawdevart.com
+## Tested on sites
+- rawdevart.com
+- raw.senmanga.com
 
 ## Current pipeline
 - User switches to selection mode and selects an area of browser screen.
