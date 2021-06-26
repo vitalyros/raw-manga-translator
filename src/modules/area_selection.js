@@ -1,5 +1,6 @@
 import { loggingForModule } from "../utils/logging";
 import * as events from "./events";
+import APP_ELEMENT_ID_PREFIX from "../utils/const";
 
 const moduleName = "area_selection";
 const logging = loggingForModule(moduleName);
@@ -110,14 +111,26 @@ export function hideSelectionDiv() {
     }
 }
 
-function allElementsFromPoint(clientX, clientY, types) {
+function allElementsFromPoint(clientX, clientY, types, tagNames) {
     logging.debug("allElementsFromPoint called", clientX, clientY, types);
     var start = true;
     var element;
     var result = [];
     var elements = [];
-    var old_visibility = [];
+    var susElements = [];
+    var susPointerEvents = [];
+    var clickPointerEvents = [];
     try {
+        // If target elements would have pointerEvents = none, document.elementFromPoint will not find them, so before searching for all suspected elements pointerEvents = all is set
+        susElements = tagNames.map((tagName) => {
+            return Array.from(document.getElementsByTagName(tagName))
+        }).flat()
+        logging.debug("elementFromPoint suspected elements", susElements);
+        susElements.forEach((susElement) => {
+            susPointerEvents.push(susElement.style.pointerEvents)
+            susElement.style.pointerEvents = 'all';
+        })
+
         while (start || element && element !== document.documentElement) {
             start = false;
             element = document.elementFromPoint(clientX, clientY);
@@ -130,14 +143,16 @@ function allElementsFromPoint(clientX, clientY, types) {
                     result.push(element);
                 }
                 elements.push(element);
-                old_visibility.push(element.style.visibility);
-                element.style.visibility = "hidden"; 
+                clickPointerEvents.push( element.style.pointerEvents);
+                element.style.pointerEvents = 'none';
             }
         }
     } finally {
-        logging.debug("allElementsFromPoint restroring visiblility", elements, old_visibility);
-        for (var k = 0; k < elements.length; k++) {
-            elements[k].style.visibility = old_visibility[k];
+        for (let k = 0; k < elements.length; k++) {
+            elements[k].style.pointerEvents = clickPointerEvents[k];
+        }
+        for (let k = 0; k < susPointerEvents.length; k++) {
+            susElements[k].style.pointerEvents = susPointerEvents[k];
         }
     }
     result.reverse();
@@ -146,11 +161,11 @@ function allElementsFromPoint(clientX, clientY, types) {
 }
 
 function allButtonsAndLinksFromPoint(clientX, clientY) {
-    return allElementsFromPoint(clientX, clientY, [HTMLButtonElement, HTMLLinkElement]); 
+    return allElementsFromPoint(clientX, clientY, [HTMLButtonElement, HTMLLinkElement], ["button", "a"]); 
 }
 
 function allImagesFromPoint(clientX, clientY) { 
-    return allElementsFromPoint(clientX, clientY, [HTMLImageElement, HTMLCanvasElement]); 
+    return allElementsFromPoint(clientX, clientY, [HTMLImageElement, HTMLCanvasElement], ["img", "canvas"]); 
 }
 
 export function onMouseMove(event) {
@@ -284,7 +299,7 @@ export function onMouseUp(event) {
 }
 
 export function onMouseDown(event) {
-    if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY && event.button === 0)) {
+    if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY) && event.button === 0) {
         isMouseDown = true;
         scrollX = window.scrollX;
         scrollY = window.scrollY;
@@ -392,6 +407,7 @@ function createCoverDiv() {
         coverDiv.style.width = "100%";
         coverDiv.style.height = "100%";
         coverDiv["z-index"] = 1298;
+        coverDiv.id=`${APP_ELEMENT_ID_PREFIX}-area-selection-cover`
         coverDiv.onclick = preventPropagation;
         coverDiv.onmousedown = preventPropagation;
     }
