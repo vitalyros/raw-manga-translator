@@ -114,9 +114,11 @@ function tabRemoved(tabId) {
     delete selectionModePerTab[tabId];
 }
 
-async function passCurrentMode() {
+async function onAreaSelectionModuleEnabled() {
     await ensureActiveTabId();
     var mode = getSelectionModeForCurrentTab();
+    updateBrowserActionIcon(mode)
+    logging.debug("passing current mode to area selection module", mode, activeTabId)
     if (mode) {
         changeSelectionTabState(mode);
     }
@@ -138,7 +140,7 @@ export async function enable() {
         await intiializeSelectionMenu(); 
         browser.tabs.onActivated.addListener(tabActivated);
         browser.tabs.onRemoved.addListener(tabRemoved);
-        events.addListener(passCurrentMode, events.EventTypes.SelectionModeEnabled);
+        events.addListener(onAreaSelectionModuleEnabled, events.EventTypes.AreaSelectionModuleEnabled);
         await updateBrowserActionIcon(false);
         browser.browserAction.onClicked.addListener(onSelectionModeSwitch);
         enabled = true;

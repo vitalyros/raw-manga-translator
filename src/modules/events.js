@@ -27,7 +27,7 @@ export const EventTypes = {
     RecognitionSuccess: "RecognitionSuccess",
     RecognitionFailure: "RecognitionFailure",
 
-    SelectionModeEnabled: "SelectionModeEnabled",
+    AreaSelectionModuleEnabled: "AreaSelectionModuleEnabled",
 
     AccordionResized: "AccordionResized",
 

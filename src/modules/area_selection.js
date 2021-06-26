@@ -487,7 +487,7 @@ export async function enable() {
         events.addListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled);      
         await events.fire({
             from: moduleName,
-            type: events.EventTypes.SelectionModeEnabled,
+            type: events.EventTypes.AreaSelectionModuleEnabled,
             data: {} 
         });
         enabled = true;
