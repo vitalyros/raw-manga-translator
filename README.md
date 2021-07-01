@@ -4,6 +4,7 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
 ## Tested on sites
 - rawdevart.com
 - raw.senmanga.com
+- tonarinoyj.jp
 
 ## Current pipeline
 - User switches to selection mode and selects an area of browser screen.
