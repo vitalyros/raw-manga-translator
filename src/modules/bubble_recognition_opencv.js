@@ -37,16 +37,16 @@ async function initCV() {
 const grayMode = true; 
 
 // Show preprocessed image that is fed to the contour finding algorythm
-const showContourSource = false;
+const showContourSource = true;
 // Show original image with all contours on it. Do not use when the contour count is high, it's going to be extremely slow
-const showAllContours = false;
+const showAllContours = true;
 const showAllContoursLimit = 10000;
 // Show original image with contour that we consider a found bubble
-const showBubbleContour = false;
+const showBubbleContour = true;
 // Show cropped image with the bubble
-const showCroppedMask = false;
+const showCroppedMask = true;
 // Show filtered bubble contents - the output of this module
-const showOutput = false;
+const showOutput = true;
 
 // Cache image source, its grayscale version, contours and hierarchy
 var useCache = true;
