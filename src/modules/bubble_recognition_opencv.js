@@ -37,16 +37,16 @@ async function initCV() {
 const grayMode = true; 
 
 // Show preprocessed image that is fed to the contour finding algorythm
-const showContourSource = true;
+const showContourSource = false;
 // Show original image with all contours on it. Do not use when the contour count is high, it's going to be extremely slow
-const showAllContours = true;
+const showAllContours = false;
 const showAllContoursLimit = 10000;
 // Show original image with contour that we consider a found bubble
-const showBubbleContour = true;
+const showBubbleContour = false;
 // Show cropped image with the bubble
-const showCroppedMask = true;
+const showCroppedMask = false;
 // Show filtered bubble contents - the output of this module
-const showOutput = true;
+const showOutput = false;
 
 // Cache image source, its grayscale version, contours and hierarchy
 var useCache = true;
@@ -206,6 +206,23 @@ function initOutputCanvas() {
 //   }
 //   ctx.putImageData(ctxImageData, 0, 0);
 // }
+
+
+// Adjusts a point on image for given scale
+function scaleImagePoint(point, scale) {
+    return {
+        x: point.x * scale.x,
+        y: point.y * scale.y
+    }
+}
+
+// Finds the scaling factors of image source for image DOM element
+function findImageScale(imageRect, imageSrc) {
+    return { 
+        x: imageSrc.cols / imageRect.width,
+        y: imageSrc.rows / imageRect.height
+    }
+}
 
 function display(src, canvas, gray = false) {
     canvas.width = src.cols;
@@ -543,12 +560,12 @@ function BubbleFinder(imageArea, contours, hierarchy) {
         }
     };
 
-    this.findBubbleContour = (clickX, clickY) => {
+    this.findBubbleContour = (point) => {
         const startDate = new Date();
         try {
             const result = this
                 .filterContoursBySize(1000, this.imageArea /4)
-                .filterContainingPoint(clickX, clickY)
+                .filterContainingPoint(point.x, point.y)
                 .selectSmallest();
             const endDate = new Date();
             if (!result) {
@@ -589,7 +606,7 @@ function saveCache(image, src, srcGray, contours, hierarchy) {
 }
 
 
-function findSpeechBubble(image, x, y, area) {
+function findSpeechBubble(image, imagePoint, imageRect, area) {
     var src;
     var srcGray;
     var contours;
@@ -632,7 +649,13 @@ function findSpeechBubble(image, x, y, area) {
         }
         displayAllContours(src, contours, hierarchy);
         let bubbleFinder = new BubbleFinder(area, contours, hierarchy);
-        const bubbleData = bubbleFinder.findBubbleContour(x, y);
+        
+        // DOM element for the image might be scaled from the source image, so the click point on DOM element might not be the same point on the source image. Possible scaling must be found and click point adjusted for scale.
+        let scale = findImageScale(imageRect, src);
+        let scaledImagePoint = scaleImagePoint(imagePoint, scale);
+        logging.debug("found source to dom scaling and adjusted image point", scale, imagePoint, scaleImagePoint)
+
+        const bubbleData = bubbleFinder.findBubbleContour(scaledImagePoint);
         if (!bubbleData) {
             return null;
         }
@@ -691,7 +714,7 @@ function onImagesClicked(event) {
         logging.debug("onImagesClicked called", event);
         const image = event.data.image;
         const imageRect = event.data.imageRect;
-        const bubble = findSpeechBubble(image, event.data.imageX, event.data.imageY, image.width * image.height);
+        const bubble = findSpeechBubble(image, { x: event.data.imageX, y: event.data.imageY }, imageRect, image.width * image.height);
         if (bubble) {
             var box = {
                 x_scrolled: imageRect.pageX + bubble.rect.x,

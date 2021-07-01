@@ -780,8 +780,7 @@ function TranslationDialog(props) {
               root: classes.dialog,
               paper: classes.dialog_paper
             }}
-            style = {{ pointerEvents: 'none', position: "absolute", transformOrigin: "top left", transform: `scale(${scale})`}}
-            // position="absolute"
+            style = {{position: "absolute", transformOrigin: "top left", transform: `scale(${scale})`}}
             color="inherit"
             disablePortal
             disableEscapeKeyDown
@@ -800,7 +799,6 @@ function TranslationDialog(props) {
             aria-describedby="alert-dialog-description"
             PaperComponent={PaperComponent}
             PaperProps={{
-              style: { pointerEvents: 'auto' },
               open: open,
               basePosition: adjustedPosition,
               baseZoom: baseZoom,

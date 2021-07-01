@@ -1,6 +1,6 @@
 import { loggingForModule } from "../utils/logging";
 import * as events from "./events";
-import APP_ELEMENT_ID_PREFIX from "../utils/const";
+import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
 
 const moduleName = "area_selection";
 const logging = loggingForModule(moduleName);
