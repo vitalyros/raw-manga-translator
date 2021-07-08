@@ -213,7 +213,7 @@ function scaleImagePoint(point, scale) {
     return {
         x: point.x * scale.x,
         y: point.y * scale.y
-    }
+    };
 }
 
 // Finds the scaling factors of image source for image DOM element
@@ -221,7 +221,7 @@ function findImageScale(imageRect, imageSrc) {
     return { 
         x: imageSrc.cols / imageRect.width,
         y: imageSrc.rows / imageRect.height
-    }
+    };
 }
 
 function display(src, canvas, gray = false) {
@@ -653,7 +653,7 @@ function findSpeechBubble(image, imagePoint, imageRect, area) {
         // DOM element for the image might be scaled from the source image, so the click point on DOM element might not be the same point on the source image. Possible scaling must be found and click point adjusted for scale.
         let scale = findImageScale(imageRect, src);
         let scaledImagePoint = scaleImagePoint(imagePoint, scale);
-        logging.debug("found source to dom scaling and adjusted image point", scale, imagePoint, scaleImagePoint)
+        logging.debug("found source to dom scaling and adjusted image point", scale, imagePoint, scaleImagePoint);
 
         const bubbleData = bubbleFinder.findBubbleContour(scaledImagePoint);
         if (!bubbleData) {

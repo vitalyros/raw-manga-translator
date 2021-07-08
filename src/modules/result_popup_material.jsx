@@ -23,16 +23,17 @@ import Accordion from '@material-ui/core/Accordion';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import ErrorBoundary from './error_boundary.jsx';
+import ErrorBoundary from '../utils/error_boundary.jsx';
 import * as settings from '../utils/settings';
 import { theme } from '../themes/default.jsx';
+import { APP_ELEMENT_ID_PREFIX } from '../utils/const';
 import _ from "lodash";
 
 const moduleName = 'result_popup';
 const logging = loggingForModule(moduleName);
 
 var enabled = false;
-const wrapper_div_id = "romatora-translation-popup-wrapper"
+const wrapper_div_id = `${APP_ELEMENT_ID_PREFIX}-translation-popup-wrapper`
 var wrapper_div = null;
 var dialog_component = null;
 

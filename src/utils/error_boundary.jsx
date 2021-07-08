@@ -1,5 +1,5 @@
 import React from 'react';
-import { loggingForModule } from '../utils/logging'
+import { loggingForModule } from './logging'
 
 const logging = loggingForModule("react_error_boundary")
 

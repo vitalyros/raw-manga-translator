@@ -123,13 +123,13 @@ function allElementsFromPoint(clientX, clientY, types, tagNames) {
     try {
         // If target elements would have pointerEvents = none, document.elementFromPoint will not find them, so before searching for all suspected elements pointerEvents = all is set
         susElements = tagNames.map((tagName) => {
-            return Array.from(document.getElementsByTagName(tagName))
-        }).flat()
+            return Array.from(document.getElementsByTagName(tagName));
+        }).flat();
         logging.debug("elementFromPoint suspected elements", susElements);
         susElements.forEach((susElement) => {
-            susPointerEvents.push(susElement.style.pointerEvents)
-            susElement.style.pointerEvents = 'all';
-        })
+            susPointerEvents.push(susElement.style.pointerEvents);
+            susElement.style.pointerEvents = "all";
+        });
 
         while (start || element && element !== document.documentElement) {
             start = false;
@@ -144,7 +144,7 @@ function allElementsFromPoint(clientX, clientY, types, tagNames) {
                 }
                 elements.push(element);
                 clickPointerEvents.push( element.style.pointerEvents);
-                element.style.pointerEvents = 'none';
+                element.style.pointerEvents = "none";
             }
         }
     } finally {
@@ -386,17 +386,17 @@ function onExclusionZoneDragUpdate(event) {
 function preventPropagation(event) {
     logging.debug("prevent progagation", event);
     try {
-        let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY)
-        let images = allImagesFromPoint(event.clientX, event.clientY)
-        logging.debug("cover div intercepted", event, buttons, images)
+        let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY);
+        let images = allImagesFromPoint(event.clientX, event.clientY);
+        logging.debug("cover div intercepted", event, buttons, images);
         if (images.length > 0 && buttons.length === 0) {
-            event.preventDefault()
-            event.stopPropagation()
+            event.preventDefault();
+            event.stopPropagation();
         }
     } catch (e) {
         logging.error("cover div interception failed", event, e);
     }
-};
+}
 
 
 // Div that covers all page and prevents onclick and onmousedown on images but not on buttons or links
@@ -407,7 +407,7 @@ function createCoverDiv() {
         coverDiv.style.width = "100%";
         coverDiv.style.height = "100%";
         coverDiv["z-index"] = 1298;
-        coverDiv.id=`${APP_ELEMENT_ID_PREFIX}-area-selection-cover`
+        coverDiv.id=`${APP_ELEMENT_ID_PREFIX}-area-selection-cover`;
         coverDiv.onclick = preventPropagation;
         coverDiv.onmousedown = preventPropagation;
     }
@@ -446,9 +446,9 @@ async function startSelectionMode() {
             document.onmousemove = onMouseMove;
             document.onmouseup = onMouseUp;
             document.onmousedown = onMouseDown;
-            document.onclick = preventPropagation
-            document.ondragstart = preventPropagation
-            document.onselectstart = preventPropagation
+            document.onclick = preventPropagation;
+            document.ondragstart = preventPropagation;
+            document.onselectstart = preventPropagation;
             createCoverDiv();
             window.addEventListener("scroll", onScroll);
             selection_mode = true;

@@ -4,9 +4,10 @@ import { loggingForModule } from "./logging";
 const logging = loggingForModule("settings");
 const storage = browser.storage.sync;
 
-const TRANSLATION_METHOD_KEY = "translationMethod";
-const TRANSLATION_LANGUAGE_KEY = "translationLanguage";
-const DEBUG_ENABLED = "debugEnabled";
+export const TRANSLATION_METHOD_KEY = "translationMethod";
+export const TRANSLATION_LANGUAGE_KEY = "translationLanguage";
+export const DEBUG_LOGGING_ENABLED = "debugLoggingEnabled";
+export const DEBUG_BUBBLE_RECOGNITION = "debugBubbleRecognition"
 
 async function getWithDefaultValue(key, defaultValue) {
     const value = await get(key);
@@ -39,6 +40,23 @@ async function set(key, value) {
         logging.error("settings set error", key, value, e);
     }
 }
+
+export async function getAll() {
+    return await storage.get();
+}
+
+export async function setAll(data) {
+    await storage.set(data);
+}
+
+export async function getDebugBubbleRecogniton() {
+    return await getWithDefaultValue(DEBUG_BUBBLE_RECOGNITION, false);
+}
+
+export async function setDebugBubbleRecogntion(value) {
+    await set(DEBUG_BUBBLE_RECOGNITION, value);
+}
+
 
 export async function getDefaultTranslationMethod() {
     return await getWithDefaultValue(TRANSLATION_METHOD_KEY, TranslationMethod.GoogleTranslateApi);

@@ -31,6 +31,10 @@
       "storage"
     ],
 
+    "options_ui": {
+      "page": "options.html"
+    },
+
     "background": {
       "scripts": ["dist/background.js"]
     },

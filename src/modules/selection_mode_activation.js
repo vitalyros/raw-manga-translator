@@ -117,8 +117,8 @@ function tabRemoved(tabId) {
 async function onAreaSelectionModuleEnabled() {
     await ensureActiveTabId();
     var mode = getSelectionModeForCurrentTab();
-    updateBrowserActionIcon(mode)
-    logging.debug("passing current mode to area selection module", mode, activeTabId)
+    updateBrowserActionIcon(mode);
+    logging.debug("passing current mode to area selection module", mode, activeTabId);
     if (mode) {
         changeSelectionTabState(mode);
     }

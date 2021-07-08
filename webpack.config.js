@@ -7,6 +7,7 @@ module.exports = {
   entry: {
     background: './src/background.js',
     page: './src/page.js',
+    options: './src/options.jsx'
   },
   devtool: 'inline-source-map',
   watchOptions: {
