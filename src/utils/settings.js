@@ -9,9 +9,23 @@ export const TRANSLATION_LANGUAGE_KEY = "translationLanguage";
 export const DEBUG_LOGGING_ENABLED = "debugLoggingEnabled";
 export const DEBUG_BUBBLE_RECOGNITION = "debugBubbleRecognition"
 
-async function getWithDefaultValue(key, defaultValue) {
+const keys = [
+    TRANSLATION_METHOD_KEY,
+    TRANSLATION_LANGUAGE_KEY,
+    DEBUG_LOGGING_ENABLED,
+    DEBUG_BUBBLE_RECOGNITION
+]
+
+const defaultValues = {}
+defaultValues[TRANSLATION_METHOD_KEY] = TranslationMethod.GoogleTranslateApi
+defaultValues[TRANSLATION_LANGUAGE_KEY] = TranslationLanguages.English.name
+defaultValues[DEBUG_LOGGING_ENABLED] = false
+defaultValues[DEBUG_BUBBLE_RECOGNITION] = false
+
+async function getWithDefaultValue(key) {
     const value = await get(key);
-    if (value === null || typeof value === "undefined") {
+    if (typeof value === "undefined" || value === null) {
+        let defaultValue = defaultValues[key]
         logging.debug("returning default value", key, defaultValue, value, typeof value);
         return defaultValue;
     } else {
@@ -41,8 +55,26 @@ async function set(key, value) {
     }
 }
 
+function addDefaultValue(data, key) {
+    let value = data[key]
+    if (typeof value === "undefined" || value === null) {
+        let defaultValue = defaultValues[key]
+        logging.debug("populating with default value", key, defaultValue, value, typeof value);
+        data[key] = defaultValue
+    }
+}
+
 export async function getAll() {
-    return await storage.get();
+    try {
+        let data = await storage.get();
+        keys.forEach(key => {
+            addDefaultValue(data, key)
+        })
+        return data;
+    } catch (e) {
+        logging.error("settings get all error, returning default", e, defaultValue);
+        return defaultValue
+    }
 }
 
 export async function setAll(data) {
@@ -50,7 +82,7 @@ export async function setAll(data) {
 }
 
 export async function getDebugBubbleRecogniton() {
-    return await getWithDefaultValue(DEBUG_BUBBLE_RECOGNITION, false);
+    return await getWithDefaultValue(DEBUG_BUBBLE_RECOGNITION);
 }
 
 export async function setDebugBubbleRecogntion(value) {
@@ -59,7 +91,7 @@ export async function setDebugBubbleRecogntion(value) {
 
 
 export async function getDefaultTranslationMethod() {
-    return await getWithDefaultValue(TRANSLATION_METHOD_KEY, TranslationMethod.GoogleTranslateApi);
+    return await getWithDefaultValue(TRANSLATION_METHOD_KEY);
 }
 
 export async function setDefaultTranslationMethod(value) {
@@ -67,7 +99,7 @@ export async function setDefaultTranslationMethod(value) {
 }
 
 export async function getDefaultTranslationLanguage() {
-    return await getWithDefaultValue(TRANSLATION_LANGUAGE_KEY, TranslationLanguages.English.name);
+    return await getWithDefaultValue(TRANSLATION_LANGUAGE_KEY);
 }
 
 export async function setDefaultTranslationLanguage(value) {
@@ -75,9 +107,9 @@ export async function setDefaultTranslationLanguage(value) {
 }
 
 export async function getDebugEnabled() {
-    return await getWithDefaultValue(DEBUG_ENABLED, true);
+    return await getWithDefaultValue(DEBUG_LOGGING_ENABLED);
 }
 
 export async function setDebugEnabled(value) {
-    await set(DEBUG_ENABLED, value);
+    await set(DEBUG_LOGGING_ENABLED, value);
 }
