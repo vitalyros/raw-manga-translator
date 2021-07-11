@@ -34,14 +34,19 @@ const logging = loggingForModule(moduleName);
 
 var enabled = false;
 const wrapper_div_id = `${APP_ELEMENT_ID_PREFIX}-translation-popup-wrapper`
-var wrapper_div = null;
-var dialog_component = null;
+var wrapper_div;
+var dialog_component;
 
 const scalingEnabled = true
 
 // Factor by witch we increase the size of all of our elements
 // With factor of 1 elements look to small on high resolution screens
-const SCALING_FACTOR = 2
+var SCALING_FACTOR = 2.0;
+(async () => {
+  let scalingFactor = await settings.getUiScale();
+  logging.debug("configred scaling factor", scalingFactor)
+  SCALING_FACTOR = scalingFactor
+})();
 
 function getCurrentZoom() {
   return window.devicePixelRatio

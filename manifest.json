@@ -32,7 +32,7 @@
     ],
 
     "options_ui": {
-      "page": "options.html"
+      "page": "options_ui.html"
     },
 
     "background": {

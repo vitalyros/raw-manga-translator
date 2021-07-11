@@ -2,6 +2,7 @@ import {default as initOpencvJs} from "@vitalyros/opencvjs-wasm-separate";
 import * as events from "./events";
 import {loggingForModule} from "../utils/logging";
 import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
+import * as settings from "../utils/settings";
 
 const moduleName = "bubble_recognition_opencv";
 const logging = loggingForModule(moduleName);
@@ -37,16 +38,25 @@ async function initCV() {
 const grayMode = true; 
 
 // Show preprocessed image that is fed to the contour finding algorythm
-const showContourSource = false;
+var showContourSource = false;
 // Show original image with all contours on it. Do not use when the contour count is high, it's going to be extremely slow
-const showAllContours = false;
+var showAllContours = false;
 const showAllContoursLimit = 10000;
 // Show original image with contour that we consider a found bubble
-const showBubbleContour = false;
+var showBubbleContour = false
 // Show cropped image with the bubble
-const showCroppedMask = false;
+var showCroppedMask = false;
 // Show filtered bubble contents - the output of this module
-const showOutput = false;
+var showOutput = false;
+(async () => {
+    let debug = await settings.getDebugBubbleRecogniton();
+    logging.debug("Configuring bubble recognition debug", debug)
+    showContourSource = debug;
+    showAllContours = debug;
+    showBubbleContour = debug;
+    showCroppedMask = debug;
+    showOutput = debug;
+})();
 
 // Cache image source, its grayscale version, contours and hierarchy
 var useCache = true;

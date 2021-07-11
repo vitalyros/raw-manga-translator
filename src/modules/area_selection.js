@@ -156,7 +156,7 @@ function allElementsFromPoint(clientX, clientY, types, tagNames) {
         }
     }
     result.reverse();
-    logging.debug("allElementsFromPoint success", clientX ,clientY, types, elements, result);
+    logging.debug("allElementsFromPoint success", clientX, clientY, types, elements, result);
     return result;
 }
 
@@ -448,7 +448,6 @@ async function startSelectionMode() {
             document.onmousedown = onMouseDown;
             document.onclick = preventPropagation;
             document.ondragstart = preventPropagation;
-            document.onselectstart = preventPropagation;
             createCoverDiv();
             window.addEventListener("scroll", onScroll);
             selection_mode = true;

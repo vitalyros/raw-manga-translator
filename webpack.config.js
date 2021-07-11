@@ -7,19 +7,19 @@ module.exports = {
   entry: {
     background: './src/background.js',
     page: './src/page.js',
-    options: './src/options.jsx'
+    options_ui: './src/options_ui.js'
   },
   devtool: 'inline-source-map',
   watchOptions: {
     aggregateTimeout: 1000,
     ignored: /node_modules/,
   },
-  optimization: {
-    minimize: true,
-    minimizer: [new TerserPlugin({
-      exclude: /opencv-wasm/
-    })],
-  },
+  // optimization: {
+  //   minimize: true,
+  //   minimizer: [new TerserPlugin({
+  //     exclude: /opencv-wasm/
+  //   })],
+  // },
   output: {
     path: path.resolve(__dirname, 'dist'),
     clean: true,
