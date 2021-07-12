@@ -3,10 +3,13 @@ import * as events from "./events";
 import {loggingForModule} from "../utils/logging";
 import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
 import * as settings from "../utils/settings";
+import { Logger } from "@opencv.js/wasm";
 
 const moduleName = "bubble_recognition_opencv";
 const logging = loggingForModule(moduleName);
 var enabled = false;
+
+var bufferInputImage; // Image element that is used to put image to opencv when original image source element is not an image or a canvas 
 
 var cv;
 
@@ -37,6 +40,8 @@ async function initCV() {
 // false: Do mask manipulation with RBGA image, no transformation on output
 const grayMode = true; 
 
+// Show input image that is used as buffer when source element is not an image or a canvas
+var showBufferImputImage = false;
 // Show preprocessed image that is fed to the contour finding algorythm
 var showContourSource = false;
 // Show original image with all contours on it. Do not use when the contour count is high, it's going to be extremely slow
@@ -51,6 +56,7 @@ var showOutput = false;
 (async () => {
     let debug = await settings.getDebugBubbleRecogniton();
     logging.debug("Configuring bubble recognition debug", debug)
+    showBufferImputImage = debug;
     showContourSource = debug;
     showAllContours = debug;
     showBubbleContour = debug;
@@ -87,6 +93,16 @@ var outputCanvas;
 function deleteCV(resource) {
     if (resource) {
         resource.delete();
+    }
+}
+
+function initBufferInputImage() {
+    if (!bufferInputImage) {
+        bufferInputImage = document.createElement("img");
+        bufferInputImage.id = `${APP_ELEMENT_ID_PREFIX}_bufferInputImage`;
+        if (showBufferImputImage) {
+            document.body.appendChild(bufferInputImage);
+        }
     }
 }
 
@@ -227,10 +243,10 @@ function scaleImagePoint(point, scale) {
 }
 
 // Finds the scaling factors of image source for image DOM element
-function findImageScale(imageRect, imageSrc) {
+function findImageScale(elementRect, imageSrc) {
     return { 
-        x: imageSrc.cols / imageRect.width,
-        y: imageSrc.rows / imageRect.height
+        x: imageSrc.cols / elementRect.width,
+        y: imageSrc.rows / elementRect.height
     };
 }
 
@@ -359,16 +375,38 @@ function convertToGray(src) {
     }
 }
 
-function readImage(image) {
+async function readImage(element) {
     try {
         const startDate = new Date();
         logging.debug("CV", cv);
-        const src = cv.imread(image);
+        var src;
+        if (element instanceof HTMLImageElement || element instanceof HTMLCanvasElement) {
+            src = cv.imread(element);
+        } else {
+            // specificaly made for comic.pixiv.net which displays manga through divs with background-image
+            // background-image string looks like url("blob:https://image")
+            // the image is loaded into bufferInputImage element, after loading opencv reads it from bufferInputImage
+            initBufferInputImage()
+            let backgroundImage = element.style["background-image"]
+            logging.debug("extracting image url from background-image style", backgroundImage)
+            let backgroundImageUrl = backgroundImage.replace(/\"\)$/, "");
+            backgroundImageUrl = backgroundImageUrl.replace(/^url\(\"/, "");
+            logging.debug("background image url", backgroundImageUrl)
+            await new Promise((resolve, reject) => {
+                bufferInputImage.onload = () => {
+                    logging.debug("image loaded to buffer image element", bufferInputImage, backgroundImageUrl)
+                    return resolve()
+                }
+                bufferInputImage.onerror = reject
+                bufferInputImage.src = backgroundImageUrl
+              })
+            src = cv.imread(bufferInputImage)
+        }
         const endDate = new Date();
-        logging.debug("image read", src, image, endDate.getTime() - startDate.getTime());
+        logging.debug("image read", src, element, endDate.getTime() - startDate.getTime());
         return src;
     } catch (e) {
-        logging.error("failed to read src image", image, e);
+        logging.error("failed to read src image", element, e);
         return null;
     }
 }
@@ -602,10 +640,10 @@ function invalidateCache() {
     }
 }
 
-function saveCache(image, src, srcGray, contours, hierarchy) {
+function saveCache(element, src, srcGray, contours, hierarchy) {
     if (useCache) {
         cache = {
-            image: image,
+            element: element,
             src: src,
             srcGray: srcGray,
             contours: contours,
@@ -616,7 +654,7 @@ function saveCache(image, src, srcGray, contours, hierarchy) {
 }
 
 
-function findSpeechBubble(image, imagePoint, imageRect, area) {
+async function findSpeechBubble(element, elementPoint, elementRect, area) {
     var src;
     var srcGray;
     var contours;
@@ -625,7 +663,7 @@ function findSpeechBubble(image, imagePoint, imageRect, area) {
     var output;
     try {
         const startDate = new Date();
-        if (useCache && cache && cache.image === image) {
+        if (useCache && cache && cache.element === element) {
             // Use data from recent cache
             src = cache.src;
             srcGray = cache.srcGray;
@@ -636,7 +674,7 @@ function findSpeechBubble(image, imagePoint, imageRect, area) {
             invalidateCache();
 
             // Load new data
-            src = readImage(image);
+            src = await readImage(element);
 
             // Convert to gray
             srcGray = convertToGray(src);
@@ -655,15 +693,15 @@ function findSpeechBubble(image, imagePoint, imageRect, area) {
             contours = contoursAndHiearchy.contours;
             hierarchy = contoursAndHiearchy.hierarchy;
 
-            saveCache(image, src, srcGray, contours, hierarchy);
+            saveCache(element, src, srcGray, contours, hierarchy);
         }
         displayAllContours(src, contours, hierarchy);
         let bubbleFinder = new BubbleFinder(area, contours, hierarchy);
         
         // DOM element for the image might be scaled from the source image, so the click point on DOM element might not be the same point on the source image. Possible scaling must be found and click point adjusted for scale.
-        let scale = findImageScale(imageRect, src);
-        let scaledImagePoint = scaleImagePoint(imagePoint, scale);
-        logging.debug("found source to dom scaling and adjusted image point", scale, imagePoint, scaleImagePoint);
+        let scale = findImageScale(elementRect, src);
+        let scaledImagePoint = scaleImagePoint(elementPoint, scale);
+        logging.debug("found source to dom scaling and adjusted image point", scale, elementPoint, scaleImagePoint);
 
         const bubbleData = bubbleFinder.findBubbleContour(scaledImagePoint);
         if (!bubbleData) {
@@ -719,18 +757,18 @@ function fireBubbleRecognitionFalure(event) {
     });
 }
 
-function onImagesClicked(event) {
+async function onImageClicked(event) {
     try {
-        logging.debug("onImagesClicked called", event);
-        const image = event.data.image;
-        const imageRect = event.data.imageRect;
-        const bubble = findSpeechBubble(image, { x: event.data.imageX, y: event.data.imageY }, imageRect, image.width * image.height);
+        logging.debug("onImageClicked called", event);
+        const element = event.data.element;
+        const elementRect = event.data.elementRect;
+        const bubble = await findSpeechBubble(element, { x: event.data.elementX, y: event.data.elementY }, elementRect, element.width * element.height);
         if (bubble) {
             var box = {
-                x_scrolled: imageRect.pageX + bubble.rect.x,
-                x_visible: imageRect.x + bubble.rect.x,
-                y_scrolled: imageRect.pageY + bubble.rect.y,
-                y_visible: imageRect.y + bubble.rect.y,
+                x_scrolled: elementRect.pageX + bubble.rect.x,
+                x_visible: elementRect.x + bubble.rect.x,
+                y_scrolled: elementRect.pageY + bubble.rect.y,
+                y_visible: elementRect.y + bubble.rect.y,
                 width: bubble.rect.width,
                 height: bubble.rect.height
             };
@@ -746,9 +784,9 @@ function onImagesClicked(event) {
         } else {
             fireBubbleRecognitionFalure(event);
         }
-        logging.debug("onImagesClicked success", event);
+        logging.debug("onImageClicked success", event);
     } catch (e) {
-        logging.error("onImagesClicked failed", event, e);
+        logging.error("onImageClicked failed", event, e);
         fireBubbleRecognitionFalure(event);
     }
 }
@@ -761,16 +799,19 @@ function onZoomChanged(/*event*/) {
 export async function enable() {
     if (!enabled) {
         await initCV();
-        events.addListener(onImagesClicked, events.EventTypes.ImagesClicked);
+        events.addListener(onImageClicked, events.EventTypes.ImageClicked);
         window.addEventListener("resize", onZoomChanged);
         enabled = true;
+        logging.debug("enabled")
     }
 }
 
 export async function disable() {
     if (enabled) {
-        events.addListener(onImagesClicked, events.EventTypes.ImagesClicked);
+        events.addListener(onImageClicked, events.EventTypes.ImageClicked);
         window.removeEventListener("resize", onZoomChanged);
         enabled = false;
+        logging.debug("disabled")
+
     }
 }

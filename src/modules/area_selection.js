@@ -1,6 +1,7 @@
 import { loggingForModule } from "../utils/logging";
 import * as events from "./events";
 import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
+import { Logger } from "@opencv.js/wasm";
 
 const moduleName = "area_selection";
 const logging = loggingForModule(moduleName);
@@ -111,8 +112,8 @@ export function hideSelectionDiv() {
     }
 }
 
-function allElementsFromPoint(clientX, clientY, types, tagNames) {
-    logging.debug("allElementsFromPoint called", clientX, clientY, types);
+function allElementsFromPoint(clientX, clientY, susTagNames, predicate) {
+    logging.debug("allElementsFromPoint called", clientX, clientY, susTagNames, predicate);
     var start = true;
     var element;
     var result = [];
@@ -122,7 +123,7 @@ function allElementsFromPoint(clientX, clientY, types, tagNames) {
     var clickPointerEvents = [];
     try {
         // If target elements would have pointerEvents = none, document.elementFromPoint will not find them, so before searching for all suspected elements pointerEvents = all is set
-        susElements = tagNames.map((tagName) => {
+        susElements = susTagNames.map((tagName) => {
             return Array.from(document.getElementsByTagName(tagName));
         }).flat();
         logging.debug("elementFromPoint suspected elements", susElements);
@@ -136,9 +137,7 @@ function allElementsFromPoint(clientX, clientY, types, tagNames) {
             element = document.elementFromPoint(clientX, clientY);
             logging.debug("elementFromPoint", clientX, clientY, element);
             if (element && element !== document.documentElement) {
-                let found = types.find((type) => {
-                    return element instanceof type;
-                });
+                let found = predicate(element)
                 if (found) {
                     result.push(element);
                 }
@@ -156,16 +155,32 @@ function allElementsFromPoint(clientX, clientY, types, tagNames) {
         }
     }
     result.reverse();
-    logging.debug("allElementsFromPoint success", clientX, clientY, types, elements, result);
+    logging.debug("allElementsFromPoint success", clientX, clientY, susTagNames, predicate, elements, result);
     return result;
 }
 
-function allButtonsAndLinksFromPoint(clientX, clientY) {
-    return allElementsFromPoint(clientX, clientY, [HTMLButtonElement, HTMLLinkElement], ["button", "a"]); 
+function isAnyOfTypes(types, element) {
+    return types.find((type) => {
+        return element instanceof type;
+    });
 }
 
-function allImagesFromPoint(clientX, clientY) { 
-    return allElementsFromPoint(clientX, clientY, [HTMLImageElement, HTMLCanvasElement], ["img", "canvas"]); 
+function isAnyOfTypesPredicate(types) {
+    return (element) => isAnyOfTypes(types, element)
+}
+
+function allButtonsAndLinksFromPoint(clientX, clientY) {
+    return allElementsFromPoint(clientX, clientY, ["button", "a"], isAnyOfTypesPredicate([HTMLButtonElement, HTMLLinkElement])); 
+}
+
+function allImageElementsFromPoint(clientX, clientY) { 
+    return allElementsFromPoint(clientX, clientY, ["div", "img", "canvas"], (element) => {
+        let isImageOrCanvas = isAnyOfTypes([HTMLImageElement, HTMLCanvasElement], element)
+        // specificaly made for comic.pixiv.net which displays manga through divs with background-image
+        let backgroundImage = element.style["background-image"]
+        let isDivWithBackgroundImage = element instanceof HTMLDivElement && Boolean(backgroundImage)
+        return isImageOrCanvas || isDivWithBackgroundImage
+    });
 }
 
 export function onMouseMove(event) {
@@ -272,22 +287,22 @@ export function onMouseUp(event) {
             } else {
                 hideSelectionDiv();
                 if (isSelectionDivAreaValidForClick()) {
-                    const images = allImagesFromPoint(event.clientX, event.clientY);
-                    const image = images[0];
-                    const imageRect = image.getBoundingClientRect();
-                    imageRect.pageX = imageRect.x + window.scrollX; 
-                    imageRect.pageY = imageRect.y + window.scrollY;
-                    // Fire event with all image elements and let the bubble recognition decide which to use
-                    if (images.length > 0) {
+                    const elements = allImageElementsFromPoint(event.clientX, event.clientY);
+                    if (elements.length > 0) {
+                        const element = elements[0];
+                        const elementRect = element.getBoundingClientRect();
+                        elementRect.pageX = elementRect.x + window.scrollX; 
+                        elementRect.pageY = elementRect.y + window.scrollY;
+                        // Fire event with all image elements and let the bubble recognition decide which to use
                         events.fire({
                             from: moduleName,
-                            type: events.EventTypes.ImagesClicked,
+                            type: events.EventTypes.ImageClicked,
                             data: {
                                 point: point,
-                                image: image,
-                                imageRect: imageRect,
-                                imageX: event.clientX - imageRect.x,
-                                imageY: event.clientY - imageRect.y
+                                element: element,
+                                elementRect: elementRect,
+                                elementX: event.clientX - elementRect.x,
+                                elementY: event.clientY - elementRect.y
                             }
                         }, true);
                     }
@@ -387,7 +402,7 @@ function preventPropagation(event) {
     logging.debug("prevent progagation", event);
     try {
         let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY);
-        let images = allImagesFromPoint(event.clientX, event.clientY);
+        let images = allImageElementsFromPoint(event.clientX, event.clientY);
         logging.debug("cover div intercepted", event, buttons, images);
         if (images.length > 0 && buttons.length === 0) {
             event.preventDefault();

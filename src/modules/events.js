@@ -31,7 +31,7 @@ export const EventTypes = {
 
     AccordionResized: "AccordionResized",
 
-    ImagesClicked: "ImagesClicked",
+    ImageClicked: "ImageClicked",
 
     SelectAreaEnabled: "SelectAreaEnabled",
     SelectAreaDisabled: "SelectAreaDisabled",
