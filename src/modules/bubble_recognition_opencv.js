@@ -13,6 +13,7 @@ var bufferInputImage; // Image element that is used to put image to opencv when 
 
 var cv;
 
+var CLICK_POINT_COLOR;
 var CONTOUR_COLOR;
 var RECTANGLE_COLOR;
 var WHITE;
@@ -30,6 +31,7 @@ async function initCV() {
     });
     logging.debug("cv built", cv);
     CONTOUR_COLOR = new cv.Scalar(255, 0, 0, 255);
+    CLICK_POINT_COLOR = new cv.Scalar(0, 255, 0, 255);
     RECTANGLE_COLOR = new cv.Scalar(0, 0, 255, 255);
     WHITE = new cv.Scalar(255);
     BLACK = new cv.Scalar(0);
@@ -234,21 +236,82 @@ function initOutputCanvas() {
 // }
 
 
-// Adjusts a point on image for given scale
-function scaleImagePoint(point, scale) {
+function adjustImagePoint(element, elementRect, imageSrc, point) {
+    let oas = findImageOffsetAndScale(element, elementRect, imageSrc);
+    logging.debug("image point offset and scale", oas);
     return {
-        x: point.x * scale.x,
-        y: point.y * scale.y
-    };
+        x: (point.x + oas.offset.x) * oas.scale.x,
+        y: (point.y + oas.offset.y) * oas.scale.y 
+    }
 }
 
-// Finds the scaling factors of image source for image DOM element
-function findImageScale(elementRect, imageSrc) {
-    return { 
-        x: imageSrc.cols / elementRect.width,
-        y: imageSrc.rows / elementRect.height
-    };
+function findImageOffsetAndScale(element, elementRect, imageSrc) {
+    let type = typeof element
+    let backgroundImage = element.style["background-image"]
+    if (type === HTMLCanvasElement || type === HTMLImageElement) {
+        // Assume that ther is no offset for canvas or image
+        return {
+            offset: {
+                x: 0,
+                y: 0
+            },
+            scale: {
+                x: imageSrc.cols / elementRect.width,
+                y: imageSrc.rows / elementRect.height
+            }
+        }
+    } if (backgroundImage) {
+        // Only implemented rescaling for background images for comic.pixiv.net
+        // todo: Make or find universal background image extractor and click point scaler
+        let computedStyle = window.getComputedStyle(element, null)
+        let backgroundSize = computedStyle.backgroundSize
+        let backgroundPositionX = computedStyle.backgroundPositionX
+        logging.debug("element background size and x position", backgroundSize, backgroundPositionX)
+        if (backgroundSize === "contain") {
+            let scale = imageSrc.rows / elementRect.height
+            let offsetX
+            if (backgroundPositionX === "100%") {
+                offsetX = -1 * (elementRect.width - imageSrc.cols / scale)
+            } else if (backgroundPositionX === "0%") {
+                offsetX = 0
+            } else {
+                throw `unsupported image source element ${element}`
+            }
+            return {
+                offset: {
+                    x: offsetX,
+                    y: 0
+                },
+                scale: {
+                    x: scale,
+                    y: scale
+                }
+            }
+        } else {
+            throw `unsupported image source element ${element}`
+        }
+    } else {
+        throw `unsupported image source element ${element}`
+    }
 }
+
+// function findImageScale(element, elementRect, imageSrc) {
+//     let type = typeof element
+//     let backgroundImage = element["background-image"]
+//     if (type === HTMLCanvasElement || type === HTMLImageElement) {
+//         return { 
+//             x: imageSrc.cols / elementRect.width,
+//             y: imageSrc.rows / elementRect.height
+//         };
+//     } else if (backgroundImage) {
+//         let computedStyle = window.getComputedStyle(element, null)
+//         logging.debug("computed style for element", element, computedStyle)
+//         let backgroundSize = computedStyle.backgroundSize.trim().split(/\s+/)
+//         logging.debug("element background size", computedStyle.backgroundSize)
+//     } else {
+//         throw `unsupported image source element ${element}`
+//     }
+// }
 
 function display(src, canvas, gray = false) {
     canvas.width = src.cols;
@@ -276,7 +339,19 @@ function display(src, canvas, gray = false) {
     ctx.putImageData(ctxImageData, 0, 0);
 }
 
-function displayAllContours(src, contours, hierarchy) {
+// Drawis a cross in the presumed point where the click was made  
+function drawImagePointCross(mat, imagePoint) {
+    let radius = 10 // cross of this radius
+    let thickness = 2;
+    let p11 = new cv.Point(imagePoint.x - radius, imagePoint.y - radius);
+    let p12 = new cv.Point(imagePoint.x + radius, imagePoint.y + radius);
+    cv.line(mat, p11, p12, CLICK_POINT_COLOR, thickness)
+    let p21 = new cv.Point(imagePoint.x - radius, imagePoint.y + radius);
+    let p22 = new cv.Point(imagePoint.x + radius, imagePoint.y - radius);
+    cv.line(mat, p21, p22, CLICK_POINT_COLOR, thickness)
+}
+
+function displayAllContours(src, contours, hierarchy, imagePoint) {
     if (showAllContours) {
         var clone;
         try {
@@ -286,9 +361,14 @@ function displayAllContours(src, contours, hierarchy) {
             }
             const startDate = new Date();
             clone = src.clone();
+
+            // Drawing contour outline
             for (let i = 0; i < contours.size(); ++i) {
                 cv.drawContours(clone, contours, i, CONTOUR_COLOR, 1, cv.LINE_8, hierarchy, 100);
             }
+            drawImagePointCross(clone, imagePoint)
+
+            cv.draw
             const drawDate = new Date();
             logging.debug("drew all contours", drawDate.getTime() - startDate.getTime()); 
             initAllContoursCanvas();
@@ -303,7 +383,7 @@ function displayAllContours(src, contours, hierarchy) {
     }
 }
 
-function displayBubbleContour(src, contours, hierarchy, contourData, boundingRect) {
+function displayBubbleContour(src, contours, hierarchy, contourData, boundingRect, imagePoint) {
     if (showBubbleContour) {
         var clone;
         try {
@@ -318,8 +398,9 @@ function displayBubbleContour(src, contours, hierarchy, contourData, boundingRec
             let point2 = new cv.Point(boundingRect.x + boundingRect.width, boundingRect.y + boundingRect.height);
             cv.rectangle(clone, point1, point2, RECTANGLE_COLOR, 2, cv.LINE_AA, 0);
             const drawRectDate = new Date();
+            drawImagePointCross(clone, imagePoint)
 
-            logging.debug("drew boundng rect", drawRectDate.getTime() - drawContourDate.getTime()); 
+            logging.debug("drew boundng rect and click point", drawRectDate.getTime() - drawContourDate.getTime()); 
 
             initBubbleContourCanvas();
             display(clone, bubbleContourCanvas);
@@ -542,7 +623,7 @@ function cropContour(src, contours, hierarchy, contourData, boundingRect) {
         logging.debug("failed to crop contour", e);
         return null;
     } finally {
-    // Delete everything except for srcCrop which is our result
+        // Delete everything except for srcCrop which is our result
         deleteCV(mask);
         deleteCV(maskRoi);
         deleteCV(maskCrop);
@@ -695,20 +776,19 @@ async function findSpeechBubble(element, elementPoint, elementRect, area) {
 
             saveCache(element, src, srcGray, contours, hierarchy);
         }
-        displayAllContours(src, contours, hierarchy);
-        let bubbleFinder = new BubbleFinder(area, contours, hierarchy);
-        
         // DOM element for the image might be scaled from the source image, so the click point on DOM element might not be the same point on the source image. Possible scaling must be found and click point adjusted for scale.
-        let scale = findImageScale(elementRect, src);
-        let scaledImagePoint = scaleImagePoint(elementPoint, scale);
-        logging.debug("found source to dom scaling and adjusted image point", scale, elementPoint, scaleImagePoint);
+        let imagePoint = adjustImagePoint(element, elementRect, src, elementPoint);
+        logging.debug("found source to dom scaling and adjusted image point", elementPoint, imagePoint);
+         
+        displayAllContours(src, contours, hierarchy, imagePoint);
 
-        const bubbleData = bubbleFinder.findBubbleContour(scaledImagePoint);
+        let bubbleFinder = new BubbleFinder(area, contours, hierarchy);
+        const bubbleData = bubbleFinder.findBubbleContour(imagePoint);
         if (!bubbleData) {
             return null;
         }
         boundingRect = cv.boundingRect(bubbleData.contour);
-        displayBubbleContour(src, contours, hierarchy, bubbleData, boundingRect);
+        displayBubbleContour(src, contours, hierarchy, bubbleData, boundingRect, imagePoint);
         if (grayMode) {
             output = cropContour(srcGray, contours, hierarchy, bubbleData, boundingRect);
         } else {
