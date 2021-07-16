@@ -123,7 +123,7 @@ function initializeSelectionDiv() {
     if (typeof selectionDiv === "undefined" || selectionDiv === null) {
         selectionDiv = document.createElement("div");
         selectionDiv.style.position = "absolute";
-        selectionDiv.style["z-index"] = 1299;
+        selectionDiv.style["z-index"] = 1297;
         selectionDiv.style.display = "block";
         selectionDiv.style.visibility = "hidden";
         selectionDiv.style.border = getBorderStyle();
@@ -345,6 +345,7 @@ export function onMouseUp(event) {
 }
 
 export function onMouseDown(event) {
+    preventPropagation(event)
     if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY) && event.button === 0) {
         isMouseDown = true;
         scrollX = window.scrollX;
@@ -432,32 +433,19 @@ function onExclusionZoneDragUpdate(event) {
 function preventPropagation(event) {
     logging.debug("prevent progagation", event);
     try {
-        let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY);
+        // comic.pixiv puts buttons above images
+        // let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY);
         let images = allImageElementsFromPoint(event.clientX, event.clientY);
-        logging.debug("cover div intercepted", event, buttons, images);
-        if (images.length > 0 && buttons.length === 0) {
-            event.preventDefault();
-            event.stopPropagation();
+        logging.debug("prevent propagation images", images) 
+        // logging.debug("cover div intercepted", event, buttons, images);
+        // if (images.length > 0 && buttons.length === 0) {
+        if (images.length > 0) {
+            event.stopImmediatePropagation();
+            logging.debug("propagation prevented")
         }
     } catch (e) {
         logging.error("cover div interception failed", event, e);
     }
-}
-
-
-// Div that covers all page and prevents onclick and onmousedown on images but not on buttons or links
-function createCoverDiv() {
-    if (!coverDiv) {
-        coverDiv = document.createElement("div");
-        coverDiv.style.position = "absolute";
-        coverDiv.style.width = "100%";
-        coverDiv.style.height = "100%";
-        coverDiv["z-index"] = 1298;
-        coverDiv.id=`${APP_ELEMENT_ID_PREFIX}-area-selection-cover`;
-        coverDiv.onclick = preventPropagation;
-        coverDiv.onmousedown = preventPropagation;
-    }
-    document.body.appendChild(coverDiv);
 }
 
 function removeCoverDiv() {
@@ -494,7 +482,10 @@ async function startSelectionMode() {
             document.onmousedown = onMouseDown;
             document.onclick = preventPropagation;
             document.ondragstart = preventPropagation;
-            createCoverDiv();
+            document.addEventListener("mousedown", onMouseDown, true);
+            // this event is used by react dialog box
+            // document.addEventListener("click", preventPropagation, true);
+            document.addEventListener("dragstart", preventPropagation, true);
             window.addEventListener("scroll", onScroll);
             selection_mode = true;
             logging.debug(moduleName, "startSelectionMode success");
