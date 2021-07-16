@@ -41,11 +41,10 @@ const scalingEnabled = true
 
 // Factor by witch we increase the size of all of our elements
 // With factor of 1 elements look to small on high resolution screens
-var SCALING_FACTOR = 2.0;
+var scalingFactor = 2.0;
 (async () => {
-  let scalingFactor = await settings.getUiScale();
+  scalingFactor = await settings.getUiScale();
   logging.debug("configred scaling factor", scalingFactor)
-  SCALING_FACTOR = scalingFactor
 })();
 
 function getCurrentZoom() {
@@ -53,13 +52,13 @@ function getCurrentZoom() {
 }
 
 function getScale(zoom) {
-  return scalingEnabled ? SCALING_FACTOR / zoom : 1
+  return scalingEnabled ? scalingFactor / zoom : 1
 }
 
 function repositionBasedOnZoomChange(position, oldZoom, newZoom) {
   return { 
-    x: position.x * oldZoom / SCALING_FACTOR,
-    y: position.y * newZoom / SCALING_FACTOR
+    x: position.x * oldZoom / scalingFactor,
+    y: position.y * newZoom / scalingFactor
   }
 }
 
@@ -195,7 +194,7 @@ class PaperComponent extends React.Component {
 
   render() {
     // var position = repositionBasedOnZoomChange(this.state.position, this.props.baseZoom, this.props.zoom)
-    var scale = scalingEnabled ? SCALING_FACTOR / this.props.zoom : 1
+    var scale = scalingEnabled ? scalingFactor / this.props.zoom : 1
     // todo: infer these numbers from styles
     var elevationBorderFix = 16
     return (

@@ -75,8 +75,8 @@ export async function getAll() {
         });
         return data;
     } catch (e) {
-        logging.error("settings get all error, returning default", e, defaultValue);
-        return defaultValue;
+        logging.error("settings get all error, returning default", e, defaultValues);
+        return defaultValues;
     }
 }
 

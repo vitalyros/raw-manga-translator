@@ -20,7 +20,13 @@ const wrapper_div_id = "romatora-translation-progress-wrapper"
 var wrapper_div = null;
 var dialog_component = null;
 
-const SCALING_FACTOR = 2
+// Factor by witch we increase the size of all of our elements
+// With factor of 1 elements look to small on high resolution screens
+var scalingFactor = 2.0;
+(async () => {
+  scalingFactor = await settings.getUiScale();
+  logging.debug("configred scaling factor", scalingFactor)
+})();
 
 function getCurrentZoom() {
   return window.devicePixelRatio
@@ -109,7 +115,7 @@ function RecognitionProgress(props) {
     }
   })(theme);
 
-  const scale = SCALING_FACTOR / zoom
+  const scale = scalingFactor / zoom
   const value = Math.ceil(progress * 100)
   
   if (shown) {

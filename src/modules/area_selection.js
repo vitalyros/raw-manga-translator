@@ -1,7 +1,7 @@
 import { loggingForModule } from "../utils/logging";
 import * as events from "./events";
+import * as settings from "../utils/settings";
 import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
-import { Logger } from "@opencv.js/wasm";
 
 const moduleName = "area_selection";
 const logging = loggingForModule(moduleName);
@@ -9,11 +9,22 @@ const logging = loggingForModule(moduleName);
 var selection_mode = false;
 var document_bak = null;
 
-const borderWidth = 2;
-
 var enabled = false;
 
 var isMouseDown = false;
+
+const baseBorderWidth = 2;
+
+// Factor by witch we increase the size of all of our elements
+// With factor of 1 elements look to small on high resolution screens
+var scalingFactor = 2.0;
+var currentZoom = getCurrentZoom();
+var borderWidth = getBorderWidth();
+(async () => {
+    scalingFactor = await settings.getUiScale();
+    logging.debug("configured scaling factor", scalingFactor);
+    borderWidth = getBorderWidth();
+})();
 
 
 var endX = 0;
@@ -39,6 +50,26 @@ var scrollY = 0;
 
 var coverDiv;
 
+function getBorderStyle() {
+    return `${borderWidth}px dashed #212121`;
+}
+
+function getBorderWidth() {
+    return baseBorderWidth * scalingFactor / currentZoom;
+}
+
+function getCurrentZoom() {
+    return window.devicePixelRatio;
+}
+
+function onZoomChanged() {
+    currentZoom = getCurrentZoom();
+    borderWidth = getBorderWidth();
+    console.debug(`${scalingFactor} ${currentZoom} ${baseBorderWidth} ${borderWidth}`)
+    if (selectionDiv) {
+        selectionDiv.style.border = getBorderStyle();
+    }
+}
 
 function selectionDivSide(start, end) {
     if (typeof selectionDiv != "undefined" || selectionDiv == null) {
@@ -95,7 +126,7 @@ function initializeSelectionDiv() {
         selectionDiv.style["z-index"] = 1299;
         selectionDiv.style.display = "block";
         selectionDiv.style.visibility = "hidden";
-        selectionDiv.style.border = `${borderWidth}px dashed #212121`;
+        selectionDiv.style.border = getBorderStyle();
         window.document.body.appendChild(selectionDiv);
     }
 }
@@ -137,7 +168,7 @@ function allElementsFromPoint(clientX, clientY, susTagNames, predicate) {
             element = document.elementFromPoint(clientX, clientY);
             logging.debug("elementFromPoint", clientX, clientY, element);
             if (element && element !== document.documentElement) {
-                let found = predicate(element)
+                let found = predicate(element);
                 if (found) {
                     result.push(element);
                 }
@@ -166,7 +197,7 @@ function isAnyOfTypes(types, element) {
 }
 
 function isAnyOfTypesPredicate(types) {
-    return (element) => isAnyOfTypes(types, element)
+    return (element) => isAnyOfTypes(types, element);
 }
 
 function allButtonsAndLinksFromPoint(clientX, clientY) {
@@ -175,11 +206,11 @@ function allButtonsAndLinksFromPoint(clientX, clientY) {
 
 function allImageElementsFromPoint(clientX, clientY) { 
     return allElementsFromPoint(clientX, clientY, ["div", "img", "canvas"], (element) => {
-        let isImageOrCanvas = isAnyOfTypes([HTMLImageElement, HTMLCanvasElement], element)
+        let isImageOrCanvas = isAnyOfTypes([HTMLImageElement, HTMLCanvasElement], element);
         // specificaly made for comic.pixiv.net which displays manga through divs with background-image
-        let backgroundImage = element.style["background-image"]
-        let isDivWithBackgroundImage = element instanceof HTMLDivElement && Boolean(backgroundImage)
-        return isImageOrCanvas || isDivWithBackgroundImage
+        let backgroundImage = element.style["background-image"];
+        let isDivWithBackgroundImage = element instanceof HTMLDivElement && Boolean(backgroundImage);
+        return isImageOrCanvas || isDivWithBackgroundImage;
     });
 }
 
@@ -514,7 +545,8 @@ export async function enable() {
         events.addListener(onExclusionZoneUpdate, events.EventTypes.AreaSelectionExclusionZoneUpdate);
         events.addListener(onExclusionZoneDragUpdate, events.EventTypes.AreaSelectionExclusionZoneDragUpdate);
         events.addListener(startSelectionMode, events.EventTypes.SelectAreaEnabled);
-        events.addListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled);      
+        events.addListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled);     
+        window.addEventListener("resize", onZoomChanged); 
         await events.fire({
             from: moduleName,
             type: events.EventTypes.AreaSelectionModuleEnabled,
@@ -530,7 +562,8 @@ export async function disable() {
         events.removeListener(onExclusionZoneUpdate, events.EventTypes.AreaSelectionExclusionZoneUpdate);
         events.removeListener(onExclusionZoneDragUpdate, events.EventTypes.AreaSelectionExclusionZoneDragUpdate);
         events.removeListener(startSelectionMode, events.EventTypes.SelectAreaEnabled);
-        events.removeListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled);      
+        events.removeListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled);    
+        window.removeEventListener("resize", onZoomChanged);   
         enabled = false;
         logging.debug("module disabled");
     }

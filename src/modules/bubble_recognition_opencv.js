@@ -3,7 +3,6 @@ import * as events from "./events";
 import {loggingForModule} from "../utils/logging";
 import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
 import * as settings from "../utils/settings";
-import { Logger } from "@opencv.js/wasm";
 
 const moduleName = "bubble_recognition_opencv";
 const logging = loggingForModule(moduleName);
@@ -50,14 +49,14 @@ var showContourSource = false;
 var showAllContours = false;
 const showAllContoursLimit = 10000;
 // Show original image with contour that we consider a found bubble
-var showBubbleContour = false
+var showBubbleContour = false;
 // Show cropped image with the bubble
 var showCroppedMask = false;
 // Show filtered bubble contents - the output of this module
 var showOutput = false;
 (async () => {
     let debug = await settings.getDebugBubbleRecogniton();
-    logging.debug("Configuring bubble recognition debug", debug)
+    logging.debug("Configuring bubble recognition debug", debug);
     showBufferImputImage = debug;
     showContourSource = debug;
     showAllContours = debug;
@@ -242,12 +241,12 @@ function adjustImagePoint(element, elementRect, imageSrc, point) {
     return {
         x: (point.x + oas.offset.x) * oas.scale.x,
         y: (point.y + oas.offset.y) * oas.scale.y 
-    }
+    };
 }
 
 function findImageOffsetAndScale(element, elementRect, imageSrc) {
-    let type = typeof element
-    let backgroundImage = element.style["background-image"]
+    let type = typeof element;
+    let backgroundImage = element.style["background-image"];
     if (type === HTMLCanvasElement || type === HTMLImageElement) {
         // Assume that ther is no offset for canvas or image
         return {
@@ -259,23 +258,23 @@ function findImageOffsetAndScale(element, elementRect, imageSrc) {
                 x: imageSrc.cols / elementRect.width,
                 y: imageSrc.rows / elementRect.height
             }
-        }
+        };
     } if (backgroundImage) {
         // Only implemented rescaling for background images for comic.pixiv.net
         // todo: Make or find universal background image extractor and click point scaler
-        let computedStyle = window.getComputedStyle(element, null)
-        let backgroundSize = computedStyle.backgroundSize
-        let backgroundPositionX = computedStyle.backgroundPositionX
-        logging.debug("element background size and x position", backgroundSize, backgroundPositionX)
+        let computedStyle = window.getComputedStyle(element, null);
+        let backgroundSize = computedStyle.backgroundSize;
+        let backgroundPositionX = computedStyle.backgroundPositionX;
+        logging.debug("element background size and x position", backgroundSize, backgroundPositionX);
         if (backgroundSize === "contain") {
-            let scale = imageSrc.rows / elementRect.height
-            let offsetX
+            let scale = imageSrc.rows / elementRect.height;
+            let offsetX;
             if (backgroundPositionX === "100%") {
-                offsetX = -1 * (elementRect.width - imageSrc.cols / scale)
+                offsetX = -1 * (elementRect.width - imageSrc.cols / scale);
             } else if (backgroundPositionX === "0%") {
-                offsetX = 0
+                offsetX = 0;
             } else {
-                throw `unsupported image source element ${element}`
+                throw `unsupported image source element ${element}`;
             }
             return {
                 offset: {
@@ -286,12 +285,12 @@ function findImageOffsetAndScale(element, elementRect, imageSrc) {
                     x: scale,
                     y: scale
                 }
-            }
+            };
         } else {
-            throw `unsupported image source element ${element}`
+            throw `unsupported image source element ${element}`;
         }
     } else {
-        throw `unsupported image source element ${element}`
+        throw `unsupported image source element ${element}`;
     }
 }
 
@@ -341,14 +340,14 @@ function display(src, canvas, gray = false) {
 
 // Drawis a cross in the presumed point where the click was made  
 function drawImagePointCross(mat, imagePoint) {
-    let radius = 10 // cross of this radius
+    let radius = 10; // cross of this radius
     let thickness = 2;
     let p11 = new cv.Point(imagePoint.x - radius, imagePoint.y - radius);
     let p12 = new cv.Point(imagePoint.x + radius, imagePoint.y + radius);
-    cv.line(mat, p11, p12, CLICK_POINT_COLOR, thickness)
+    cv.line(mat, p11, p12, CLICK_POINT_COLOR, thickness);
     let p21 = new cv.Point(imagePoint.x - radius, imagePoint.y + radius);
     let p22 = new cv.Point(imagePoint.x + radius, imagePoint.y - radius);
-    cv.line(mat, p21, p22, CLICK_POINT_COLOR, thickness)
+    cv.line(mat, p21, p22, CLICK_POINT_COLOR, thickness);
 }
 
 function displayAllContours(src, contours, hierarchy, imagePoint) {
@@ -366,9 +365,9 @@ function displayAllContours(src, contours, hierarchy, imagePoint) {
             for (let i = 0; i < contours.size(); ++i) {
                 cv.drawContours(clone, contours, i, CONTOUR_COLOR, 1, cv.LINE_8, hierarchy, 100);
             }
-            drawImagePointCross(clone, imagePoint)
+            drawImagePointCross(clone, imagePoint);
 
-            cv.draw
+            cv.draw;
             const drawDate = new Date();
             logging.debug("drew all contours", drawDate.getTime() - startDate.getTime()); 
             initAllContoursCanvas();
@@ -398,7 +397,7 @@ function displayBubbleContour(src, contours, hierarchy, contourData, boundingRec
             let point2 = new cv.Point(boundingRect.x + boundingRect.width, boundingRect.y + boundingRect.height);
             cv.rectangle(clone, point1, point2, RECTANGLE_COLOR, 2, cv.LINE_AA, 0);
             const drawRectDate = new Date();
-            drawImagePointCross(clone, imagePoint)
+            drawImagePointCross(clone, imagePoint);
 
             logging.debug("drew boundng rect and click point", drawRectDate.getTime() - drawContourDate.getTime()); 
 
@@ -467,21 +466,21 @@ async function readImage(element) {
             // specificaly made for comic.pixiv.net which displays manga through divs with background-image
             // background-image string looks like url("blob:https://image")
             // the image is loaded into bufferInputImage element, after loading opencv reads it from bufferInputImage
-            initBufferInputImage()
-            let backgroundImage = element.style["background-image"]
-            logging.debug("extracting image url from background-image style", backgroundImage)
-            let backgroundImageUrl = backgroundImage.replace(/\"\)$/, "");
-            backgroundImageUrl = backgroundImageUrl.replace(/^url\(\"/, "");
-            logging.debug("background image url", backgroundImageUrl)
+            initBufferInputImage();
+            let backgroundImage = element.style["background-image"];
+            logging.debug("extracting image url from background-image style", backgroundImage);
+            let backgroundImageUrl = backgroundImage.replace(/"\)$/, "");
+            backgroundImageUrl = backgroundImageUrl.replace(/^url\("/, "");
+            logging.debug("background image url", backgroundImageUrl);
             await new Promise((resolve, reject) => {
                 bufferInputImage.onload = () => {
-                    logging.debug("image loaded to buffer image element", bufferInputImage, backgroundImageUrl)
-                    return resolve()
-                }
-                bufferInputImage.onerror = reject
-                bufferInputImage.src = backgroundImageUrl
-              })
-            src = cv.imread(bufferInputImage)
+                    logging.debug("image loaded to buffer image element", bufferInputImage, backgroundImageUrl);
+                    return resolve();
+                };
+                bufferInputImage.onerror = reject;
+                bufferInputImage.src = backgroundImageUrl;
+            });
+            src = cv.imread(bufferInputImage);
         }
         const endDate = new Date();
         logging.debug("image read", src, element, endDate.getTime() - startDate.getTime());
@@ -882,7 +881,7 @@ export async function enable() {
         events.addListener(onImageClicked, events.EventTypes.ImageClicked);
         window.addEventListener("resize", onZoomChanged);
         enabled = true;
-        logging.debug("enabled")
+        logging.debug("enabled");
     }
 }
 
@@ -891,7 +890,7 @@ export async function disable() {
         events.addListener(onImageClicked, events.EventTypes.ImageClicked);
         window.removeEventListener("resize", onZoomChanged);
         enabled = false;
-        logging.debug("disabled")
+        logging.debug("disabled");
 
     }
 }
