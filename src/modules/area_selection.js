@@ -2,11 +2,12 @@ import { loggingForModule } from "../utils/logging";
 import * as events from "./events";
 import * as settings from "../utils/settings";
 import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
+import {wrapperDivId as resultPopupId } from "./result_popup_material.jsx";
 
 const moduleName = "area_selection";
 const logging = loggingForModule(moduleName);
 
-var selection_mode = false;
+var selectionMode = false;
 var document_bak = null;
 
 var enabled = false;
@@ -194,6 +195,24 @@ function isAnyOfTypes(types, element) {
     return types.find((type) => {
         return element instanceof type;
     });
+}
+
+function findAncestorElementResultPopup(topElement) {
+    return findAncestorElement(topElement, (element) => {
+        return element.id === resultPopupId;
+    })
+}
+
+function findAncestorElement(topElement, predicate) {
+    let element = topElement
+    while (element && element !== document.documentElement) {
+        if (predicate(element)) {
+            return element;
+        } else {
+            element = element.parentElement
+        }
+    } 
+    return null;
 }
 
 function isAnyOfTypesPredicate(types) {
@@ -430,18 +449,26 @@ function onExclusionZoneDragUpdate(event) {
     exclusionZoneDragged = event.data.dragged;
 }
 
+// If the mouse event is done above an image (or, to be precise, something we expect to extract a manga image from) calls stopImmediatePropagation on the mouse event, to stop its processing
+// Unless the mouse event is done for one of our plugin's interface components - then the event is processed normaly. The fact that React components will prevent the event's bubbling (after processing it) is relied upon.
 function preventPropagation(event) {
     logging.debug("prevent progagation", event);
     try {
-        // comic.pixiv puts buttons above images
-        // let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY);
-        let images = allImageElementsFromPoint(event.clientX, event.clientY);
-        logging.debug("prevent propagation images", images) 
-        // logging.debug("cover div intercepted", event, buttons, images);
-        // if (images.length > 0 && buttons.length === 0) {
-        if (images.length > 0) {
-            event.stopImmediatePropagation();
-            logging.debug("propagation prevented")
+        if (findAncestorElementResultPopup(event.target)) {
+            logging.debug("event is above plugin's interface components, not preventing propagation")
+            return;
+        } else {
+            // comic.pixiv puts buttons above images
+            // let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY);
+            let images = allImageElementsFromPoint(event.clientX, event.clientY);
+            logging.debug("prevent propagation images", images) 
+            // logging.debug("cover div intercepted", event, buttons, images);
+            // if (images.length > 0 && buttons.length === 0) {
+            if (images.length > 0) {
+                // prefent further event processing by other handlers
+                event.stopImmediatePropagation();
+                logging.debug("propagation prevented")
+            }
         }
     } catch (e) {
         logging.error("cover div interception failed", event, e);
@@ -456,7 +483,7 @@ function removeCoverDiv() {
 async function startSelectionMode() {
     try {
         logging.debug(moduleName, "startSelectionMode called");
-        if (enabled && !selection_mode) {
+        if (enabled && !selectionMode) {
             document_bak = {};
             if (typeof document.onclick !== "undefined") {
                 document_bak.onclick = document.onclick;
@@ -483,11 +510,10 @@ async function startSelectionMode() {
             document.onclick = preventPropagation;
             document.ondragstart = preventPropagation;
             document.addEventListener("mousedown", onMouseDown, true);
-            // this event is used by react dialog box
-            // document.addEventListener("click", preventPropagation, true);
+            document.addEventListener("click", preventPropagation, true);
             document.addEventListener("dragstart", preventPropagation, true);
             window.addEventListener("scroll", onScroll);
-            selection_mode = true;
+            selectionMode = true;
             logging.debug(moduleName, "startSelectionMode success");
         }
     } catch (e) {
@@ -498,7 +524,7 @@ async function startSelectionMode() {
 async function stopSelectionMode() {
     try {
         logging.debug(moduleName, "stopSelectionMode called");
-        if (enabled && selection_mode) {
+        if (enabled && selectionMode) {
             if (document_bak != null) {
                 if (typeof document_bak.onclick !== "undefined") {
                     document.onclick = document_bak.onclick;
@@ -520,10 +546,9 @@ async function stopSelectionMode() {
                 }
                 document_bak = null;
             }
-            removeCoverDiv();
             window.removeEventListener("scroll", onScroll);
             hideSelectionDiv();
-            selection_mode = false;
+            selectionMode = false;
             logging.debug(moduleName, "stopSelectionMode success");
         }
     } catch (e) {

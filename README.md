@@ -6,6 +6,7 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
 - raw.senmanga.com
 - tonarinoyj.jp
 - rawlazy.com
+- comic.pixiv.net
 
 ## Current pipeline
 - User switches to selection mode and selects an area of browser screen.

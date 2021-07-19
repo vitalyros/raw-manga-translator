@@ -33,8 +33,8 @@ const moduleName = 'result_popup';
 const logging = loggingForModule(moduleName);
 
 var enabled = false;
-const wrapper_div_id = `${APP_ELEMENT_ID_PREFIX}-translation-popup-wrapper`
-var wrapper_div;
+export const wrapperDivId = `${APP_ELEMENT_ID_PREFIX}-translation-popup-wrapper`
+var wrapperDiv;
 var dialog_component;
 
 const scalingEnabled = true
@@ -846,16 +846,16 @@ function TranslationDialog(props) {
 }
 
 async function lazyInitComponent() {
-  if (!wrapper_div) {
-    wrapper_div = document.createElement('div');
-    wrapper_div.id = wrapper_div_id;
-    document.body.appendChild(wrapper_div);
+  if (!wrapperDiv) {
+    wrapperDiv = document.createElement('div');
+    wrapperDiv.id = wrapperDivId;
+    document.body.appendChild(wrapperDiv);
   }
   if (!dialog_component) {
     try {
       var translationMethod = await settings.getDefaultTranslationMethod()
       var translationLanguage = await settings.getDefaultTranslationLanguage()
-      dialog_component = await ReactDOM.render(<TranslationDialog translationMethod={translationMethod} translationLanguage={translationLanguage}/>, document.querySelector(`#${wrapper_div_id}`));
+      dialog_component = await ReactDOM.render(<TranslationDialog translationMethod={translationMethod} translationLanguage={translationLanguage}/>, document.querySelector(`#${wrapperDivId}`));
     } catch(e) {
       logging.error ("Failed to initialize popup", dialog_component, e)
     }
@@ -872,9 +872,9 @@ export async function enable() {
 
 export async function disable() {
     if (enabled) {
-        if (wrapper_div) {
-            document.body.removeChild(wrapper_div)
-            wrapper_div = null;
+        if (wrapperDiv) {
+            document.body.removeChild(wrapperDiv)
+            wrapperDiv = null;
         }
         if (dialog_component) {
             ReactDOM.unmountComponentAtNode(dialog_component)
