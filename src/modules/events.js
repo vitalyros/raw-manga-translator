@@ -18,10 +18,6 @@ export const EventTypes = {
     GoogleTranslateTabTranslationFinished: "GoogleTranslateTabTranslationFinished",
     GoogleTranslateTabTranslationEnabled: "GoogleTranslateTabTranslationEnabled",
 
-    PageImageCaptured: "PageImageCaptured",
-    
-    PageInitialized: "PageInitialized",
-
     RecognitionStart: "RecognitionStart",
     RecognitionProgress: "RecognitiionProgress",
     RecognitionSuccess: "RecognitionSuccess",
@@ -44,7 +40,10 @@ export const EventTypes = {
     TranslationSuccess: "TranslationSuccess",
     TranslationFailure: "TranslationFailure",
 
-    BubbleRecognitionFailure: "BubbleRecognitionFailure"
+    BubbleRecognitionFailure: "BubbleRecognitionFailure",
+
+    PageScriptInitializationSuccess: "PageScriptInitializationSuccess",
+    PageScriptInitializationFailure: "PageScriptInitializationFailure"
 };
 
 var enabled = false;
@@ -52,6 +51,14 @@ var location = Location.Undefined;
 var listeners_by_type = {};
 var listeners_for_all = [];
 
+async function asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+        let callable = array[index];
+        if (callable) {
+            await callback(callable);
+        }
+    }
+}
 
 async function sendToActiveTab(event) {
     var tab = await tabs.getActiveTab();
@@ -86,19 +93,35 @@ async function onEvent(event) {
     if (enabled) {
         var nick = event.nick;
         if (typeof nick !== "undefined" && nick === APP_NAME) {
-            listeners_for_all.forEach(async listener => {
-                try {
-                    await listener(event);
-                } catch(e) {
-                    logging.error("listener failed to handle event", event, listener, e);
+            let listeners = listeners_for_all;
+            if (listeners) {
+                if (listeners.length > 1) {
+                    // listeners may change during execution of listeners, so
+                    // if there are more listeners than 1, clone them beforehand
+                    listeners = listeners.slice(0);
                 }
-            });
-
+                await asyncForEach(listeners, async listener => {
+                    try {
+                        logging.debug("calling listener for all events for event", listener, event);
+                        await listener(event);
+                    } catch(e) {
+                        logging.error("listener failed to handle event", event, listener, e);
+                    }
+                });
+            }
+            
             if (typeof event.type !== "undefined") {
-                var type_listeners = listeners_by_type[event.type];
-                if (typeof type_listeners !== "undefined") {
-                    type_listeners.forEach(async listener => {
+                let listeners = listeners_by_type[event.type];
+                if (listeners) {
+                    if (listeners.length > 1) {
+                        // listeners may change during execution of listeners, so
+                        // if there are more listeners than 1, clone them beforehand
+                        listeners = listeners.slice(0);
+                    }
+                    logging.debug("calling listeners for event", listeners, event);
+                    await asyncForEach(listeners, async listener => {
                         try {
+                            logging.debug("calling listener for event", listener, event);
                             await listener(event);
                         } catch(e) {
                             logging.error("listener failed to handle event", event, listener, e);
@@ -120,6 +143,7 @@ export function addListener(listener, event_type) {
         let index = type_listeners.indexOf(listener);
         if (index === -1) {
             type_listeners.push(listener);
+            logging.debug("added listener for event", listener, event_type, type_listeners);
         } else {
             logging.error("Failed to add listener. Listener for event type already added", listener, event_type);
         }
@@ -127,6 +151,7 @@ export function addListener(listener, event_type) {
         let index = listeners_for_all.indexOf(listener);
         if (index === -1) {
             listeners_for_all.push(listener);
+            logging.debug("added listener for all events", listener);
         } else {
             logging.error("Failed to add listener. Listener already added", listener);
         }

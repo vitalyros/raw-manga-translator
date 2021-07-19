@@ -118,7 +118,7 @@ function initilizeTesseract() {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(initilizeTesseract, events.EventTypes.SelectAreaEnabled);
+        await waitForTesseract();
         events.addListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess);
         enabled = true;
         logging.debug("module enabled");
@@ -127,7 +127,6 @@ export async function enable() {
 
 export async function disable() {
     if (enabled) {
-        events.removeListener(initilizeTesseract, events.EventTypes.SelectAreaEnabled);
         events.removeListener(onImageCaptured, events.EventTypes.ImageCaptureSuccess);
         if (worker != null) {
             worker.terminate();

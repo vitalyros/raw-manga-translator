@@ -1,7 +1,6 @@
 import { loggingForModule } from "../utils/logging";
 import * as events from "./events";
 import * as settings from "../utils/settings";
-import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
 import {wrapperDivId as resultPopupId } from "./result_popup_material.jsx";
 
 const moduleName = "area_selection";
@@ -49,7 +48,15 @@ var debugExclusionZones = false;
 var scrollX = 0;
 var scrollY = 0;
 
-var coverDiv;
+var pageScriptInitializationPromise;
+
+async function awaitForPluginToLoadInActiveMode() {
+    if (pageScriptInitializationPromise) {
+        logging.debug("waiting on page script activation promise");
+        await pageScriptInitializationPromise;
+        logging.debug("finished waiting on page script activation promise");
+    }
+}
 
 function getBorderStyle() {
     return `${borderWidth}px dashed #212121`;
@@ -66,7 +73,7 @@ function getCurrentZoom() {
 function onZoomChanged() {
     currentZoom = getCurrentZoom();
     borderWidth = getBorderWidth();
-    console.debug(`${scalingFactor} ${currentZoom} ${baseBorderWidth} ${borderWidth}`)
+    console.debug(`${scalingFactor} ${currentZoom} ${baseBorderWidth} ${borderWidth}`);
     if (selectionDiv) {
         selectionDiv.style.border = getBorderStyle();
     }
@@ -200,28 +207,28 @@ function isAnyOfTypes(types, element) {
 function findAncestorElementResultPopup(topElement) {
     return findAncestorElement(topElement, (element) => {
         return element.id === resultPopupId;
-    })
+    });
 }
 
 function findAncestorElement(topElement, predicate) {
-    let element = topElement
+    let element = topElement;
     while (element && element !== document.documentElement) {
         if (predicate(element)) {
             return element;
         } else {
-            element = element.parentElement
+            element = element.parentElement;
         }
     } 
     return null;
 }
 
-function isAnyOfTypesPredicate(types) {
-    return (element) => isAnyOfTypes(types, element);
-}
+// function isAnyOfTypesPredicate(types) {
+//     return (element) => isAnyOfTypes(types, element);
+// }
 
-function allButtonsAndLinksFromPoint(clientX, clientY) {
-    return allElementsFromPoint(clientX, clientY, ["button", "a"], isAnyOfTypesPredicate([HTMLButtonElement, HTMLLinkElement])); 
-}
+// function allButtonsAndLinksFromPoint(clientX, clientY) {
+//     return allElementsFromPoint(clientX, clientY, ["button", "a"], isAnyOfTypesPredicate([HTMLButtonElement, HTMLLinkElement])); 
+// }
 
 function allImageElementsFromPoint(clientX, clientY) { 
     return allElementsFromPoint(clientX, clientY, ["div", "img", "canvas"], (element) => {
@@ -297,7 +304,7 @@ export function onScroll(/*event*/) {
 }
 
 
-export function onMouseUp(event) {
+function onMouseUp(event) {
     if (isMouseDown) {
         isMouseDown = false;            
         if (!exclusionZoneDragged && !intersetcWithExclusionZone(startX, startY, event.pageX, event.pageY)) {
@@ -326,14 +333,17 @@ export function onMouseUp(event) {
                 height: height - borderWidth * 2
             };
             if (isSelectionDivAreaValid()) {
-                events.fire({
-                    type: events.EventTypes.SelectAreaSuccess,
-                    from: moduleName,
-                    data: {
-                        point: point,
-                        box: box
-                    }
-                });
+                (async () => {
+                    await awaitForPluginToLoadInActiveMode();
+                    events.fire({
+                        type: events.EventTypes.SelectAreaSuccess,
+                        from: moduleName,
+                        data: {
+                            point: point,
+                            box: box
+                        }
+                    });
+                })();
             } else {
                 hideSelectionDiv();
                 if (isSelectionDivAreaValidForClick()) {
@@ -344,17 +354,20 @@ export function onMouseUp(event) {
                         elementRect.pageX = elementRect.x + window.scrollX; 
                         elementRect.pageY = elementRect.y + window.scrollY;
                         // Fire event with all image elements and let the bubble recognition decide which to use
-                        events.fire({
-                            from: moduleName,
-                            type: events.EventTypes.ImageClicked,
-                            data: {
-                                point: point,
-                                element: element,
-                                elementRect: elementRect,
-                                elementX: event.clientX - elementRect.x,
-                                elementY: event.clientY - elementRect.y
-                            }
-                        }, true);
+                        (async () => {
+                            await awaitForPluginToLoadInActiveMode();
+                            events.fire({
+                                from: moduleName,
+                                type: events.EventTypes.ImageClicked,
+                                data: {
+                                    point: point,
+                                    element: element,
+                                    elementRect: elementRect,
+                                    elementX: event.clientX - elementRect.x,
+                                    elementY: event.clientY - elementRect.y
+                                }
+                            }, true);
+                        })();
                     }
                 }
             }
@@ -363,8 +376,8 @@ export function onMouseUp(event) {
     }
 }
 
-export function onMouseDown(event) {
-    preventPropagation(event)
+function onMouseDown(event) {
+    preventPropagation(event);
     if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY) && event.button === 0) {
         isMouseDown = true;
         scrollX = window.scrollX;
@@ -455,29 +468,26 @@ function preventPropagation(event) {
     logging.debug("prevent progagation", event);
     try {
         if (findAncestorElementResultPopup(event.target)) {
-            logging.debug("event is above plugin's interface components, not preventing propagation")
+            logging.debug("event is above plugin's interface components, not preventing propagation");
             return;
         } else {
             // comic.pixiv puts buttons above images
             // let buttons = allButtonsAndLinksFromPoint(event.clientX, event.clientY);
             let images = allImageElementsFromPoint(event.clientX, event.clientY);
-            logging.debug("prevent propagation images", images) 
+            logging.debug("prevent propagation images", images); 
             // logging.debug("cover div intercepted", event, buttons, images);
             // if (images.length > 0 && buttons.length === 0) {
             if (images.length > 0) {
+                // prevent default mouse events e.g. image dragging and link following
+                event.preventDefault();
                 // prefent further event processing by other handlers
                 event.stopImmediatePropagation();
-                logging.debug("propagation prevented")
+                logging.debug("propagation prevented");
             }
         }
     } catch (e) {
         logging.error("cover div interception failed", event, e);
     }
-}
-
-function removeCoverDiv() {
-    document.body.removeChild(coverDiv);
-    coverDiv = null;
 }
 
 async function startSelectionMode() {
@@ -547,6 +557,9 @@ async function stopSelectionMode() {
                 document_bak = null;
             }
             window.removeEventListener("scroll", onScroll);
+            document.removeEventListener("mousedown", onMouseDown);
+            document.removeEventListener("click", preventPropagation);
+            document.removeEventListener("dragstart", preventPropagation);
             hideSelectionDiv();
             selectionMode = false;
             logging.debug(moduleName, "stopSelectionMode success");
@@ -563,11 +576,23 @@ export async function enable() {
         events.addListener(startSelectionMode, events.EventTypes.SelectAreaEnabled);
         events.addListener(stopSelectionMode, events.EventTypes.SelectAreaDisabled);     
         window.addEventListener("resize", onZoomChanged); 
+        // todo: cleanup listeners on disable
+        pageScriptInitializationPromise = new Promise((resolve, reject) => {
+            events.addListener(() => { 
+                logging.debug("page script activation promise resolved");
+                resolve();
+            }, events.EventTypes.PageScriptInitializationSuccess);  
+            events.addListener(() => { 
+                logging.debug("page script activation promise rejected");
+                reject();
+            }, events.EventTypes.PageScriptInitializationFailure);  
+        });
         await events.fire({
             from: moduleName,
             type: events.EventTypes.AreaSelectionModuleEnabled,
             data: {} 
         });
+
         enabled = true;
         logging.debug("module enabled");
     }

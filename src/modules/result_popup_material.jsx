@@ -845,7 +845,7 @@ function TranslationDialog(props) {
   }
 }
 
-async function lazyInitComponent() {
+async function initReactComponent() {
   if (!wrapperDiv) {
     wrapperDiv = document.createElement('div');
     wrapperDiv.id = wrapperDivId;
@@ -864,7 +864,7 @@ async function lazyInitComponent() {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
+        initReactComponent()
         enabled = true
         logging.debug("module enabled")
     }
@@ -880,7 +880,6 @@ export async function disable() {
             ReactDOM.unmountComponentAtNode(dialog_component)
             dialog_component = null;
         }
-        events.removeListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = false
         logging.debug("module disabled")
     }

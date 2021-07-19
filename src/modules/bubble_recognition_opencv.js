@@ -245,9 +245,8 @@ function adjustImagePoint(element, elementRect, imageSrc, point) {
 }
 
 function findImageOffsetAndScale(element, elementRect, imageSrc) {
-    let type = typeof element;
     let backgroundImage = element.style["background-image"];
-    if (type === HTMLCanvasElement || type === HTMLImageElement) {
+    if (element instanceof HTMLCanvasElement || element instanceof HTMLImageElement) {
         // Assume that ther is no offset for canvas or image
         return {
             offset: {

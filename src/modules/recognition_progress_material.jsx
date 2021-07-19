@@ -144,7 +144,7 @@ function RecognitionProgress(props) {
   }
 }
 
-async function lazyInitComponent() {
+async function initReactComponent() {
   if (!wrapper_div) {
     wrapper_div = document.createElement('div');
     wrapper_div.id = wrapper_div_id;
@@ -161,7 +161,7 @@ async function lazyInitComponent() {
 
 export async function enable() {
     if (!enabled) {
-        events.addListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
+        await initReactComponent()
         enabled = true
         logging.debug("module enabled")
     }
@@ -177,7 +177,6 @@ export async function disable() {
             ReactDOM.unmountComponentAtNode(dialog_component)
             dialog_component = null;
         }
-        events.removeListener(lazyInitComponent, events.EventTypes.SelectAreaEnabled)
         enabled = false
         logging.debug("module disabled")
     }
