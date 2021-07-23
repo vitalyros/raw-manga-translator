@@ -2,17 +2,30 @@
 An attempt to make an opensource firefox plugin that automatically recognizes and translates text in japanese manga on demand without a specialized backend service, i.e. with all the work done in browser or adopting existing services as backends.
 
 ## Testing site list
-- rawdevart.com
-- raw.senmanga.com
-- tonarinoyj.jp
-- rawlazy.com
-- comic.pixiv.net
+### Works on
+- [rawdevart](https://rawdevart.com)
+- [comico](https://comico.jp)
+- [pixiv](https://comic.pixiv.net)
+- [raw.senmanga](https://raw.senmanga.com)
+- [tonarinoyj](https://tonarinoyj.jp)
+- [rawlazy](https://rawlazy.com/)
+- [urasunday](https://urasunday.com)
+- [sukima](https://www.sukima.me)
+- [mangaz](https://www.mangaz.com)
+
+### Does not work on
+- [mangabox](https://www.mangabox.me)
+- [comic-waker](https://comic-walker.com)
+- [alphapolis](https://www.alphapolis.co.jp)
+- [comic-clear](https://www.comic-clear.jp)
+- [ganganonline](https://www.ganganonline.com)
+- [ebookjapan](https://ebookjapan.yahoo.co.jp)
 
 ## Current pipeline
 - User switches to selection mode and selects an area of browser screen.
 - A screenshot of the selected part is made.
 - The screenshot is processed with tesseract.js OCR tool to get Japanese text.
-- The Japanese text is then translated to English with the help of  browser-based implementation of Google Translate API or a separate tab running the google translate site.
+- The Japanese text is then translated to English with the help of browser-based implementation of Google Translate API or a separate tab running the google translate site.
 - The Translated English text is displayed near the selected area in a React js dialog
 
 ## Building Packaging Installing
@@ -30,16 +43,18 @@ Download and install [the latest distro](https://github.com/vitalyros/raw-manga-
 - Build and package with by running `npm run dist`.
 - Install by firefox page `about:debugging` -> `This Firefox` -> `Load Temporary Addon` -> select raw-manga-translator-firefox-plugin.xpi file
 
-## Using
-- Enable translation mode in the tab with manga. 
+## How to use
+- Enable translation mode in the tab with manga:
   - Click the plugin icon in the firefox toolkit
   - Or left-click on the page to open the context menu and choose `Enable raw manga translation` 
-- Select a text bubble or a text area
+- Select a text bubble or a text area:
   - Right click a text bubble to translate it
   - If the text is not in the bubble or the recontition failed - right click and drag to select an area with text
-- Do disable translation mode 
+- To disable translation mode:
   - Click once again on the plugin icon in the firefox toolkit
   - Or left-click on the page to open the context menu and choose `Disable raw manga translation` 
+
+If the UI is too big or too small for you, change it on the `about:addons` page in `raw manga translator` -> `preferences`
 
 ## License
 - All code in the `src` directory is under Apache License 2.0
