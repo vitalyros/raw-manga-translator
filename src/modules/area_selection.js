@@ -1,7 +1,7 @@
 import { loggingForModule } from "../utils/logging";
 import * as events from "./events";
 import * as settings from "../utils/settings";
-import {APP_ELEMENT_ID_PREFIX} from "../utils/const"
+import {APP_ELEMENT_ID_PREFIX} from "../utils/const";
 
 const moduleName = "area_selection";
 const logging = loggingForModule(moduleName);
@@ -39,6 +39,8 @@ var selectionMaxArea = (window.innerHeight * window.innerWidth) * 0.5; // ridicu
 
 // Max selection area we consider it a click
 var clickMaxArea = 100;
+
+var clickTargetElement;
 
 var exclusionZones = {};
 var exclusionZoneDragged = false;
@@ -165,7 +167,7 @@ function allElementsFromPoint(clientX, clientY, susTagNames, predicate) {
         susElements = susTagNames.map((tagName) => {
             return Array.from(document.getElementsByTagName(tagName));
         }).flat();
-        logging.debug("elementFromPoint suspected elements", susElements);
+        // logging.debug("elementFromPoint suspected elements", susElements);
         susElements.forEach((susElement) => {
             susPointerEvents.push(susElement.style.pointerEvents);
             susElement.style.pointerEvents = "all";
@@ -174,7 +176,7 @@ function allElementsFromPoint(clientX, clientY, susTagNames, predicate) {
         while (start || element && element !== document.documentElement) {
             start = false;
             element = document.elementFromPoint(clientX, clientY);
-            logging.debug("elementFromPoint", clientX, clientY, element);
+            // logging.debug("elementFromPoint", clientX, clientY, element);
             if (element && element !== document.documentElement) {
                 let found = predicate(element);
                 if (found) {
@@ -210,12 +212,14 @@ function findAncestorElementResultPopup(topElement) {
     });
 }
 
-function findAncestorElement(topElement, predicate) {
+function findAncestorElement(topElement, predicate, maxDepth) {
+    let depth = 0;
     let element = topElement;
-    while (element && element !== document.documentElement) {
+    while (element && element !== document.documentElement && (!Boolean(maxDepth) || depth < maxDepth)) {
         if (predicate(element)) {
             return element;
         } else {
+            depth++;
             element = element.parentElement;
         }
     } 
@@ -303,98 +307,163 @@ export function onScroll(/*event*/) {
     }
 }
 
-
-function onMouseUp(event) {
-    if (isMouseDown) {
-        isMouseDown = false;            
-        if (!exclusionZoneDragged && !intersetcWithExclusionZone(startX, startY, event.pageX, event.pageY)) {
-            scrollX = window.scrollX;
-            scrollY = window.scrollY;
-            endX = event.pageX;
-            endY = event.pageY;
-            const x_scrolled = selectionDivUpperCornerX();
-            const y_scrolled = selectionDivUpperCornerY();
-            const x_visible = x_scrolled - scrollX;
-            const y_visible = y_scrolled - scrollY;
-            const width = selectionDivWidth();
-            const height = selectionDivHeight();
-            const point = {
-                pageX: event.pageX,
-                pageY: event.pageY,
-                clientX: event.clientX,
-                clientY: event.clientY,
-            };
-            const box = {
-                x_scrolled: x_scrolled + borderWidth,
-                y_scrolled: y_scrolled + borderWidth,
-                x_visible: x_visible + borderWidth,
-                y_visible: y_visible + borderWidth,
-                width: width - borderWidth * 2,
-                height: height - borderWidth * 2
-            };
-            if (isSelectionDivAreaValid()) {
-                (async () => {
-                    await awaitForPluginToLoadInActiveMode();
-                    events.fire({
-                        type: events.EventTypes.SelectAreaSuccess,
-                        from: moduleName,
-                        data: {
-                            point: point,
-                            box: box
-                        }
-                    });
-                })();
-            } else {
-                hideSelectionDiv();
-                if (isSelectionDivAreaValidForClick()) {
-                    const elements = allImageElementsFromPoint(event.clientX, event.clientY);
-                    if (elements.length > 0) {
-                        const element = elements[0];
-                        const elementRect = element.getBoundingClientRect();
-                        elementRect.pageX = elementRect.x + window.scrollX; 
-                        elementRect.pageY = elementRect.y + window.scrollY;
-                        // Fire event with all image elements and let the bubble recognition decide which to use
-                        (async () => {
-                            await awaitForPluginToLoadInActiveMode();
-                            events.fire({
-                                from: moduleName,
-                                type: events.EventTypes.ImageClicked,
-                                data: {
-                                    point: point,
-                                    element: element,
-                                    elementRect: elementRect,
-                                    elementX: event.clientX - elementRect.x,
-                                    elementY: event.clientY - elementRect.y
-                                }
-                            }, true);
-                        })();
-                    }
-                }
+function pickByMaxZindex(elements) {
+    let maxZindexElement = null;
+    let maxZindex = null;
+    elements.forEach((element) => {
+        let zindexAncestor = findAncestorElement(element, (element) => {
+            let zindex = window.getComputedStyle(element)["z-index"];
+            return Boolean(zindex) && zindex !== "auto";
+        }, 5)
+        if (zindexAncestor) {
+            let zindex = window.getComputedStyle(zindexAncestor)["z-index"]
+            if (!Boolean(maxZindex) || zindex > maxZindex) {
+                maxZindexElement = element;
+                maxZindex = zindex;
             }
         }
-        hideSelectionDiv();
+    });
+    logging.debug("pickByMaxZindex result", maxZindexElement, maxZindex)
+    return maxZindexElement;
+}
+function pickByClickedElement(elements) {
+    let clickedElementIsImageSource = false
+    if (clickTargetElement) {
+        elements.forEach((element) => {
+            if (element === clickTargetElement) {
+                clickedElementIsImageSource = true;
+            }
+        });
+    }
+    if (clickedElementIsImageSource) {
+        return clickTargetElement;
+    } else {
+        return null;
     }
 }
 
-function onMouseDown(event) {
-    preventPropagation(event);
-    if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY) && event.button === 0) {
-        isMouseDown = true;
-        scrollX = window.scrollX;
-        scrollY = window.scrollY;
-        startX = event.pageX;
-        startY = event.pageY;
-        initializeSelectionDiv();
-        selectionDiv.style.left = `${startX}px`;
-        selectionDiv.style.width = "0px";
-        selectionDiv.style.top = `${startY}px`;
-        selectionDiv.style.height = "0px";
-        events.fire({
-            type: events.EventTypes.SelectAreaStart,
-            from: moduleName,
-            data: {}
-        });
+// In case the click is done on multiple images source elements at the same time, the top visible image source should be selected 
+function pickClickedImageSourceElement(elements) {
+    if (elements.length == 1) {
+        logging.debug("image source element is the only one", elements[0]);
+        // the list of 1 image source should not filtered further
+        return elements[0];
     }
+    let pickedByClickedElement = pickByClickedElement(elements)
+    if (pickedByClickedElement) {
+        logging.debug("picked image source by clicked element", pickedByClickedElement)
+        return pickedByClickedElement;
+    }
+    let pickedByMaxZindex = pickByMaxZindex(elements);
+    if (pickedByMaxZindex) {
+        logging.debug("picked image source by max z-index", pickedByMaxZindex)
+        return pickedByMaxZindex;
+    }
+    logging.debug("unable to pick image source lement, picking first", elements[0])
+    return elements[0];
+}
+
+
+function onMouseUp(event) {
+    try {
+        if (isMouseDown) {
+            isMouseDown = false;            
+            if (!exclusionZoneDragged && !intersetcWithExclusionZone(startX, startY, event.pageX, event.pageY)) {
+                scrollX = window.scrollX;
+                scrollY = window.scrollY;
+                endX = event.pageX;
+                endY = event.pageY;
+                const x_scrolled = selectionDivUpperCornerX();
+                const y_scrolled = selectionDivUpperCornerY();
+                const x_visible = x_scrolled - scrollX;
+                const y_visible = y_scrolled - scrollY;
+                const width = selectionDivWidth();
+                const height = selectionDivHeight();
+                const point = {
+                    pageX: event.pageX,
+                    pageY: event.pageY,
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                };
+                const box = {
+                    x_scrolled: x_scrolled + borderWidth,
+                    y_scrolled: y_scrolled + borderWidth,
+                    x_visible: x_visible + borderWidth,
+                    y_visible: y_visible + borderWidth,
+                    width: width - borderWidth * 2,
+                    height: height - borderWidth * 2
+                };
+                if (isSelectionDivAreaValid()) {
+                    (async () => {
+                        await awaitForPluginToLoadInActiveMode();
+                        events.fire({
+                            type: events.EventTypes.SelectAreaSuccess,
+                            from: moduleName,
+                            data: {
+                                point: point,
+                                box: box
+                            }
+                        });
+                    })();
+                } else {
+                    hideSelectionDiv();
+                    if (isSelectionDivAreaValidForClick()) {
+                        clickTargetElement = event.target;
+                        const elements = allImageElementsFromPoint(event.clientX, event.clientY);
+                        if (elements.length > 0) {
+                            const element = pickClickedImageSourceElement(elements);
+                            const elementRect = element.getBoundingClientRect();
+                            elementRect.pageX = elementRect.x + window.scrollX; 
+                            elementRect.pageY = elementRect.y + window.scrollY;
+                            // Fire event with all image elements and let the bubble recognition decide which to use
+                            (async () => {
+                                await awaitForPluginToLoadInActiveMode();
+                                events.fire({
+                                    from: moduleName,
+                                    type: events.EventTypes.ImageClicked,
+                                    data: {
+                                        point: point,
+                                        element: element,
+                                        elementRect: elementRect,
+                                        elementX: event.clientX - elementRect.x,
+                                        elementY: event.clientY - elementRect.y
+                                    }
+                                }, true);
+                            })();
+                        }
+                    }
+                }
+            }
+            hideSelectionDiv();
+        }   
+    } catch (e) {
+        logger.error("failed to process onMouseUp", e)
+    } 
+}
+
+function onMouseDown(event) {
+    try {
+        preventPropagation(event);
+        if (!isMouseDown && !exclusionZoneDragged &&!isInExclusionZone(event.pageX, event.pageY) && event.button === 0) {
+            isMouseDown = true;
+            scrollX = window.scrollX;
+            scrollY = window.scrollY;
+            startX = event.pageX;
+            startY = event.pageY;
+            initializeSelectionDiv();
+            selectionDiv.style.left = `${startX}px`;
+            selectionDiv.style.width = "0px";
+            selectionDiv.style.top = `${startY}px`;
+            selectionDiv.style.height = "0px";
+            events.fire({
+                type: events.EventTypes.SelectAreaStart,
+                from: moduleName,
+                data: {}
+            });
+        }
+    } catch (e) {
+        logger.error("failed to process onMouseDown", e)
+    } 
 }
 
 function intersetcWithExclusionZone(startX, startY, endX, endY) {
@@ -466,6 +535,10 @@ function onExclusionZoneDragUpdate(event) {
 // Unless the mouse event is done for one of our plugin's interface components - then the event is processed normaly. The fact that React components will prevent the event's bubbling (after processing it) is relied upon.
 function preventPropagation(event) {
     logging.debug("prevent progagation", event);
+    if (event.button != 0) {
+        logging.debug(`not preventing propagation for button ${event.button}`);
+        return;
+    }
     try {
         if (findAncestorElementResultPopup(event.target)) {
             logging.debug("event is above plugin's interface components, not preventing propagation");

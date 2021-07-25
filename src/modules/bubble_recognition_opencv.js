@@ -18,6 +18,17 @@ var RECTANGLE_COLOR;
 var WHITE;
 var BLACK;
 
+async function initDebug() {
+    let debug = await settings.getDebugBubbleRecogniton();
+    logging.debug("Configuring bubble recognition debug", debug);
+    showBufferImputImage = debug;
+    showContourSource = debug;
+    showAllContours = debug;
+    showBubbleContour = debug;
+    showCroppedMask = debug;
+    showOutput = debug;
+}
+
 async function initCV() {
     var url = browser.extension.getURL("./dist/ext/opencv/opencv.wasm");
     logging.debug("initializing CV", url);
@@ -54,16 +65,6 @@ var showBubbleContour = false;
 var showCroppedMask = false;
 // Show filtered bubble contents - the output of this module
 var showOutput = false;
-(async () => {
-    let debug = await settings.getDebugBubbleRecogniton();
-    logging.debug("Configuring bubble recognition debug", debug);
-    showBufferImputImage = debug;
-    showContourSource = debug;
-    showAllContours = debug;
-    showBubbleContour = debug;
-    showCroppedMask = debug;
-    showOutput = debug;
-})();
 
 // Cache image source, its grayscale version, contours and hierarchy
 var useCache = true;
@@ -877,6 +878,7 @@ function onZoomChanged(/*event*/) {
 export async function enable() {
     if (!enabled) {
         await initCV();
+        await initDebug();
         events.addListener(onImageClicked, events.EventTypes.ImageClicked);
         window.addEventListener("resize", onZoomChanged);
         enabled = true;
