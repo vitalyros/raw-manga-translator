@@ -1,7 +1,7 @@
 import { loggingForModule } from "../utils/logging";
 import * as events from "./events";
 import * as settings from "../utils/settings";
-import {wrapperDivId as resultPopupId } from "./result_popup_material.jsx";
+import {APP_ELEMENT_ID_PREFIX} from "../utils/const"
 
 const moduleName = "area_selection";
 const logging = loggingForModule(moduleName);
@@ -206,7 +206,7 @@ function isAnyOfTypes(types, element) {
 
 function findAncestorElementResultPopup(topElement) {
     return findAncestorElement(topElement, (element) => {
-        return element.id === resultPopupId;
+        return Boolean(element.id) && element.id.startsWith(APP_ELEMENT_ID_PREFIX);
     });
 }
 

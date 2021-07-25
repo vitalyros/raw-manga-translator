@@ -33,7 +33,7 @@ const moduleName = 'result_popup';
 const logging = loggingForModule(moduleName);
 
 var enabled = false;
-export const wrapperDivId = `${APP_ELEMENT_ID_PREFIX}-translation-popup-wrapper`
+const wrapperDivId = `${APP_ELEMENT_ID_PREFIX}-translation-popup-wrapper`
 var wrapperDiv;
 var dialog_component;
 
@@ -290,6 +290,7 @@ function TranslationTool(props) {
       onChange={props.onSelectTranslationMethod}
       autoWidth={true}
       MenuProps={{
+        id: `${APP_ELEMENT_ID_PREFIX}_select_translation_method_menu`,
         className: props.classes.translate_method_select_menu
       }}
     >
@@ -303,6 +304,7 @@ function TranslationTool(props) {
       onChange={props.onSelectTranslationLanguage}
       autoWidth={true}
       MenuProps={{
+        id: `${APP_ELEMENT_ID_PREFIX}_select_translation_language_menu`,
         className: props.classes.translate_language_select_menu
       }}>
       {languageMenuItems}
