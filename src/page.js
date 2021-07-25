@@ -32,6 +32,9 @@ var events;
         var message_logger = require("./modules/message_logger.js");
         await message_logger.enable();
 
+        var translation_google_translate_tab = require("./modules/translation_google_translate_tab_page.js");
+        await translation_google_translate_tab.enable();
+
         // the whole plugin is initialized lazily on the first area selection enabled event
         events.addListener(initializePlugin, events.EventTypes.SelectAreaEnabled);
 
@@ -65,9 +68,6 @@ async function initializePlugin() {
     
             var result_popup = require("./modules/result_popup_material.jsx");
             await result_popup.enable();
-    
-            var translation_google_translate_tab = require("./modules/translation_google_translate_tab_page.js");
-            await translation_google_translate_tab.enable();
     
             var bubble_recognition = require("./modules/bubble_recognition_opencv.js");
             await bubble_recognition.enable();
