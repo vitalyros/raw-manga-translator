@@ -12,13 +12,14 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
 - [urasunday](https://urasunday.com)
 - [sukima](https://www.sukima.me)
 - [mangaz](https://www.mangaz.com)
+- [ganganonline](https://www.ganganonline.com)
 
-### Does not work on
+### Works with problems
 - [mangabox](https://www.mangabox.me)
 - [comic-waker](https://comic-walker.com)
 - [alphapolis](https://www.alphapolis.co.jp)
-- [comic-clear](https://www.comic-clear.jp)
-- [ganganonline](https://www.ganganonline.com)
+
+### Does not work on
 - [ebookjapan](https://ebookjapan.yahoo.co.jp)
 
 ## Current pipeline

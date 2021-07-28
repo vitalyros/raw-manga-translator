@@ -235,6 +235,39 @@ function initOutputCanvas() {
 //   ctx.putImageData(ctxImageData, 0, 0);
 // }
 
+// Crashes firefox
+// function display(src, canvas) {
+//   cv.imshow(canvas, src)
+// }
+
+function display(src, canvas, gray = false) {
+    canvas.width = src.cols;
+    canvas.height = src.rows;
+    const srcData = src.data;
+    const ctx = canvas.getContext("2d");
+    const ctxImageData = ctx.createImageData(src.cols, src.rows);
+    const outData = ctxImageData.data;
+    const length = srcData.length;
+    if (gray) {
+    // src is one byte per pixel (gray8), canvas is four bytes per pixel (RGBA8)
+        for (let i = 0, j = 0; i < length; i += 1, j += 4) {
+            let srcByte = srcData[i];
+            outData[j] = srcByte;
+            outData[j + 1] = srcByte;
+            outData[j + 2] = srcByte;
+            outData[j + 3] = 255; // Non transparent
+        }
+    } else {
+    // Both src and canvas are four bytes per pixel bixel (RGBA8)
+        for (let i = 0; i < length; i += 1) {
+            outData[i] = srcData[i];
+        }
+    }
+    ctx.putImageData(ctxImageData, 0, 0);
+}
+
+
+
 
 function adjustImagePoint(element, elementRect, imageSrc, point) {
     let oas = findImageOffsetAndScale(element, elementRect, imageSrc);
@@ -312,31 +345,6 @@ function findImageOffsetAndScale(element, elementRect, imageSrc) {
 //     }
 // }
 
-function display(src, canvas, gray = false) {
-    canvas.width = src.cols;
-    canvas.height = src.rows;
-    const srcData = src.data;
-    const ctx = canvas.getContext("2d");
-    const ctxImageData = ctx.createImageData(src.cols, src.rows);
-    const outData = ctxImageData.data;
-    const length = srcData.length;
-    if (gray) {
-    // src is one byte per pixel (gray8), canvas is four bytes per pixel (RGBA8)
-        for (let i = 0, j = 0; i < length; i += 1, j += 4) {
-            let srcByte = srcData[i];
-            outData[j] = srcByte;
-            outData[j + 1] = srcByte;
-            outData[j + 2] = srcByte;
-            outData[j + 3] = 255; // Non transparent
-        }
-    } else {
-    // Both src and canvas are four bytes per pixel bixel (RGBA8)
-        for (let i = 0; i < length; i += 1) {
-            outData[i] = srcData[i];
-        }
-    }
-    ctx.putImageData(ctxImageData, 0, 0);
-}
 
 // Drawis a cross in the presumed point where the click was made  
 function drawImagePointCross(mat, imagePoint) {
