@@ -70,15 +70,12 @@ var showOutput = false;
 var useCache = true;
 var cache;
 
-
-
-
 // Configurations for preprocessing of the image before contour finding algorithm 
 // Those might work better or worse depending on the processed image - the darkness of  the contrast and darkness of its edges and its textures
 
 // The side of blure rectangle
 // 3 would be rather small, 10 would be much, 20 - very much
-const CP_BLUR_SIDE = 10;
+const CP_BLUR_SIDE = 5;
 // Half hypothenuse is the maximum influence distance of blur
 const CP_BLUR_HALF_HYPOTENUSE = Math.sqrt(CP_BLUR_SIDE * CP_BLUR_SIDE * 2) / 2;
 // The treshold value that turns gray colors into black. 
@@ -265,9 +262,6 @@ function display(src, canvas, gray = false) {
     }
     ctx.putImageData(ctxImageData, 0, 0);
 }
-
-
-
 
 function adjustImagePoint(element, elementRect, imageSrc, point) {
     let oas = findImageOffsetAndScale(element, elementRect, imageSrc);
@@ -535,6 +529,164 @@ function findContoursPreprocessing_gaussianBlurSimpleThreshold(srcGray) {
     return result;
 }
 
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+
+function samplePoints(srcGray) {
+    const minSampleSize = 5000;
+    const maxSampleSize = 10000;
+    const desirableSampleSizeRate = 500;
+    const srcCols = srcGray.cols;
+    const srcRows = srcGray.rows;
+    const srcSize = srcRows * srcCols
+    var sampleSize = Math.floor(srcSize / desirableSampleSizeRate);
+    if (sampleSize > maxSampleSize) {
+        sampleSize = maxSampleSize
+    } else if (sampleSize < minSampleSize) {
+        sampleSize = minSampleSize
+    }
+    const sample = new cv.Mat(sampleSize, 1, cv.CV_32F);
+    const randomInterval = Math.floor(srcSize / sampleSize);
+    logging.debug("sampling from source by interval", srcSize, sampleSize, randomInterval)
+    if (sampleSize > srcSize) {
+        // Probably useless code for a case when our image is very small
+        for (var y = 0; y < srcRows; y++ ) {
+            for (var x = 0; x < srcCols; x++ ) {
+                sample.floatPtr(y * x + x)[0] = srcGray.ucharPtr(y, x)[0];
+            }
+        }
+    } else {
+        for (var i = 0; i < sampleSize; i++) {
+            const randomIncrement = getRandomInt(0, randomInterval);
+            const sourcePixelIndex = i * randomInterval + randomIncrement;
+            y = Math.floor(sourcePixelIndex / srcCols);
+            x = sourcePixelIndex % srcCols;
+            // logging.debug("x, y", randomIncrement, sourcePixelIndex, srcCols, x , srcRows, y)
+            sample.floatPtr(i)[0] = srcGray.ucharPtr(y, x)[0];
+        }
+    }
+    return sample
+}
+
+// Finds k-means for sample
+// Returns a sorted array of left/center/right values of clusters sorted by centers
+function kmeans(sample, clusterCount) {
+    const labels = new cv.Mat();
+    const attempts = 5;
+    const centers = new cv.Mat();
+    try {
+        const crite = new cv.TermCriteria(cv.TermCriteria_EPS + cv.TermCriteria_MAX_ITER, 100, 1);
+        cv.kmeans(sample, clusterCount, labels, crite, attempts, cv.KMEANS_RANDOM_CENTERS, centers);
+        const groups = new Array(clusterCount);
+        for(var i = 0; i < clusterCount; i++) {
+            groups[i] = { 
+                left: null,
+                center: centers.floatAt(i, 0),
+                right: null,
+                count: 0,
+            }
+        }
+        for (var i = 0; i < labels.rows; i++) {
+            const groupIndex = labels.intAt(i);
+            const pixelValue = sample.floatAt(i, 0);
+            const group = groups[groupIndex];
+            group.count = group.count + 1;
+            if (pixelValue > group.center && (group.right == null || pixelValue > group.right)) {
+                logging.debug("new rigth", i, groupIndex, pixelValue, group);
+                group.right = pixelValue;
+            } else if (group.left == null || pixelValue < group.left ) {
+                logging.debug("new left", i, groupIndex, pixelValue, group);
+                group.left = pixelValue;
+            }
+        }
+        groups.sort(function(a, b) {
+            return a.center - b.center;
+        });
+        groups.forEach(group => {
+            group.right = Math.round(group.right);
+            group.center = Math.round(group.center);
+            group.left = Math.round(group.left);
+        });
+        return groups
+    } finally {
+        deleteCV(labels);
+        deleteCV(centers);
+    }
+}
+
+function findContoursPreprocessing_canny(srcGray) {
+    const startDate = new Date();
+    const result = new cv.Mat();
+
+    cv.normalize(srcGray, result, 0, 255, cv.NORM_MINMAX)
+
+    cv.Canny(result, result, 50, 250, 3, false);
+    const endDate = new Date();
+    logging.debug("contour prerocessing: finished", result, endDate.getTime() - startDate.getTime());
+    return result;
+}
+
+// - Normalize
+// - Blur
+// - Take a sample of an image pixels
+// Calculate K-means of the sample with 5
+// Assume the folowing heuristic: 
+//      Either paper color or abnormally light pixels will be collected in group 5
+// Threshold by the lower border (darker pixel) of group 1
+// - Erode
+function findContoursPreprocessing_kmeansErode(srcGray) {
+    const startDate = new Date();
+    const result = new cv.Mat();
+
+    cv.normalize(srcGray, result, 0, 255, cv.NORM_MINMAX)
+    const normalizeDate = new Date();
+    logging.debug("contour prerocessing: normalize", normalizeDate.getTime() - startDate.getTime())
+
+    const blurSide = CP_BLUR_SIDE % 2 == 1 ? CP_BLUR_SIDE : CP_BLUR_SIDE + 1; // Blur side can only be uneven for gaussian blur
+    const ksize = new cv.Size(blurSide, blurSide);
+    cv.GaussianBlur(result, result, ksize, 0, 0, cv.BORDER_DEFAULT);
+
+    // Sampling
+    const sample = samplePoints(srcGray);
+    const samplingDate = new Date();
+    logging.debug("contour prerocessing: sampling for kmeans", sample, samplingDate.getTime() - normalizeDate.getTime())
+
+    // K-means
+    const clusterCount = 6;
+    var groups;
+    try {
+        groups = kmeans(sample, clusterCount);
+    } finally {
+        deleteCV(sample);
+    }
+    const kmeansDate = new Date();
+    logging.debug("contour prerocessing: kmeans", groups, kmeansDate.getTime() - samplingDate.getTime());
+
+    // Threshold
+    const thresholdValue = groups[4].right;
+    cv.threshold(result, result, thresholdValue, 255, cv.THRESH_BINARY);
+    const thresholdDate = new Date();
+    logging.debug("contour prerocessing: threshold", thresholdValue, result, thresholdDate.getTime() - kmeansDate.getTime());
+
+    const anchor = new cv.Point(-1, -1);
+    const erodeMat = cv.Mat.ones(2, 2, cv.CV_8U);
+    try {
+        cv.erode(result, result, erodeMat, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
+    } finally {
+        deleteCV(erodeMat);
+    }
+    const erodeDate = new Date();
+    logging.debug("contour prerocessing: erode", result, erodeDate.getTime() - thresholdDate.getTime());
+    logging.debug("contour prerocessing: finished", result, erodeDate.getTime() - startDate.getTime());
+    
+    return result;
+}
+
+
 // Kinda whitens the picture, but great texture removal, probably better with bad quality scans
 // function findContoursPreprocessing_gausianBlurOtsuThresholding(srcGray) {
 //     const startDate = new Date();
@@ -567,7 +719,7 @@ function findContoursPreprocessing_gaussianBlurSimpleThreshold(srcGray) {
 //     return result;
 // }
 
-const findContoursPreprocessing = (srcGray) => findContoursPreprocessing_gaussianBlurSimpleThreshold(srcGray);
+const findContoursPreprocessing = (srcGray) => findContoursPreprocessing_kmeansErode(srcGray);
 
 
 function findContours(srcGray) {

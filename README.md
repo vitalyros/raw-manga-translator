@@ -8,7 +8,6 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
 - [pixiv](https://comic.pixiv.net)
 - [raw.senmanga](https://raw.senmanga.com)
 - [tonarinoyj](https://tonarinoyj.jp)
-- [rawlazy](https://rawlazy.com/)
 - [urasunday](https://urasunday.com)
 - [sukima](https://www.sukima.me)
 - [mangaz](https://www.mangaz.com)
@@ -20,6 +19,7 @@ An attempt to make an opensource firefox plugin that automatically recognizes an
 - [alphapolis](https://www.alphapolis.co.jp)
 
 ### Does not work on
+- [rawlazy](https://rawlazy.com/)
 - [ebookjapan](https://ebookjapan.yahoo.co.jp)
 
 ## Current pipeline
