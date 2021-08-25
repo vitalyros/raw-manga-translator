@@ -618,17 +618,37 @@ function kmeans(sample, clusterCount) {
     }
 }
 
-function findContoursPreprocessing_canny(srcGray) {
+// function findContoursPreprocessing_canny(srcGray) {
+//     const startDate = new Date();
+//     const result = new cv.Mat();
+
+//     cv.normalize(srcGray, result, 0, 255, cv.NORM_MINMAX)
+
+//     cv.Canny(result, result, 50, 250, 3, false);
+//     const endDate = new Date();
+//     logging.debug("contour prerocessing: finished", result, endDate.getTime() - startDate.getTime());
+//     return result;
+// }
+
+// - Normalize
+// - Gausian Blur
+// - Canny
+function findContoursPreprocessing_gausianCanny(srcGray) {
     const startDate = new Date();
     const result = new cv.Mat();
 
     cv.normalize(srcGray, result, 0, 255, cv.NORM_MINMAX)
 
-    cv.Canny(result, result, 50, 250, 3, false);
+    const blurSide = CP_BLUR_SIDE % 2 == 1 ? CP_BLUR_SIDE : CP_BLUR_SIDE + 1; // Blur side can only be uneven for gaussian blur
+    const ksize = new cv.Size(blurSide, blurSide);
+    cv.GaussianBlur(result, result, ksize, 0, 0, cv.BORDER_DEFAULT);
+
+    cv.Canny(result, result, 100, 200, 3, true);
     const endDate = new Date();
     logging.debug("contour prerocessing: finished", result, endDate.getTime() - startDate.getTime());
     return result;
 }
+
 
 // - Normalize
 // - Blur
@@ -638,53 +658,53 @@ function findContoursPreprocessing_canny(srcGray) {
 //      Either paper color or abnormally light pixels will be collected in group 5
 // Threshold by the lower border (darker pixel) of group 1
 // - Erode
-function findContoursPreprocessing_kmeansErode(srcGray) {
-    const startDate = new Date();
-    const result = new cv.Mat();
+// function findContoursPreprocessing_kmeansErode(srcGray) {
+//     const startDate = new Date();
+//     const result = new cv.Mat();
 
-    cv.normalize(srcGray, result, 0, 255, cv.NORM_MINMAX)
-    const normalizeDate = new Date();
-    logging.debug("contour prerocessing: normalize", normalizeDate.getTime() - startDate.getTime())
+//     cv.normalize(srcGray, result, 0, 255, cv.NORM_MINMAX)
+//     const normalizeDate = new Date();
+//     logging.debug("contour prerocessing: normalize", normalizeDate.getTime() - startDate.getTime())
 
-    const blurSide = CP_BLUR_SIDE % 2 == 1 ? CP_BLUR_SIDE : CP_BLUR_SIDE + 1; // Blur side can only be uneven for gaussian blur
-    const ksize = new cv.Size(blurSide, blurSide);
-    cv.GaussianBlur(result, result, ksize, 0, 0, cv.BORDER_DEFAULT);
+//     const blurSide = CP_BLUR_SIDE % 2 == 1 ? CP_BLUR_SIDE : CP_BLUR_SIDE + 1; // Blur side can only be uneven for gaussian blur
+//     const ksize = new cv.Size(blurSide, blurSide);
+//     cv.GaussianBlur(result, result, ksize, 0, 0, cv.BORDER_DEFAULT);
 
-    // Sampling
-    const sample = samplePoints(srcGray);
-    const samplingDate = new Date();
-    logging.debug("contour prerocessing: sampling for kmeans", sample, samplingDate.getTime() - normalizeDate.getTime())
+//     // Sampling
+//     const sample = samplePoints(srcGray);
+//     const samplingDate = new Date();
+//     logging.debug("contour prerocessing: sampling for kmeans", sample, samplingDate.getTime() - normalizeDate.getTime())
 
-    // K-means
-    const clusterCount = 6;
-    var groups;
-    try {
-        groups = kmeans(sample, clusterCount);
-    } finally {
-        deleteCV(sample);
-    }
-    const kmeansDate = new Date();
-    logging.debug("contour prerocessing: kmeans", groups, kmeansDate.getTime() - samplingDate.getTime());
+//     // K-means
+//     const clusterCount = 6;
+//     var groups;
+//     try {
+//         groups = kmeans(sample, clusterCount);
+//     } finally {
+//         deleteCV(sample);
+//     }
+//     const kmeansDate = new Date();
+//     logging.debug("contour prerocessing: kmeans", groups, kmeansDate.getTime() - samplingDate.getTime());
 
-    // Threshold
-    const thresholdValue = groups[4].right;
-    cv.threshold(result, result, thresholdValue, 255, cv.THRESH_BINARY);
-    const thresholdDate = new Date();
-    logging.debug("contour prerocessing: threshold", thresholdValue, result, thresholdDate.getTime() - kmeansDate.getTime());
+//     // Threshold
+//     const thresholdValue = groups[4].right;
+//     cv.threshold(result, result, thresholdValue, 255, cv.THRESH_BINARY);
+//     const thresholdDate = new Date();
+//     logging.debug("contour prerocessing: threshold", thresholdValue, result, thresholdDate.getTime() - kmeansDate.getTime());
 
-    const anchor = new cv.Point(-1, -1);
-    const erodeMat = cv.Mat.ones(2, 2, cv.CV_8U);
-    try {
-        cv.erode(result, result, erodeMat, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
-    } finally {
-        deleteCV(erodeMat);
-    }
-    const erodeDate = new Date();
-    logging.debug("contour prerocessing: erode", result, erodeDate.getTime() - thresholdDate.getTime());
-    logging.debug("contour prerocessing: finished", result, erodeDate.getTime() - startDate.getTime());
+//     const anchor = new cv.Point(-1, -1);
+//     const erodeMat = cv.Mat.ones(2, 2, cv.CV_8U);
+//     try {
+//         cv.erode(result, result, erodeMat, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
+//     } finally {
+//         deleteCV(erodeMat);
+//     }
+//     const erodeDate = new Date();
+//     logging.debug("contour prerocessing: erode", result, erodeDate.getTime() - thresholdDate.getTime());
+//     logging.debug("contour prerocessing: finished", result, erodeDate.getTime() - startDate.getTime());
     
-    return result;
-}
+//     return result;
+// }
 
 
 // Kinda whitens the picture, but great texture removal, probably better with bad quality scans
@@ -719,7 +739,7 @@ function findContoursPreprocessing_kmeansErode(srcGray) {
 //     return result;
 // }
 
-const findContoursPreprocessing = (srcGray) => findContoursPreprocessing_kmeansErode(srcGray);
+const findContoursPreprocessing = (srcGray) => findContoursPreprocessing_gausianCanny(srcGray);
 
 
 function findContours(srcGray) {
